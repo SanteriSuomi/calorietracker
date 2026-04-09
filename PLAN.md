@@ -242,7 +242,8 @@ GOOGLE_CLIENT_SECRET=        # Optional
 
 ## Implementation Steps
 
-- [ ] 1. Scaffold — `sv create`, install all deps, git init, .gitignore, AGENTS.md
+- [x] 0. Project init — git init, .gitignore, PLAN.md, AGENTS.md, commit, push to GitHub
+- [ ] 1. Scaffold — `sv create`, install all deps
 - [ ] 2. Database — Drizzle schema with audit fields, dual-provider setup, initial migration
 - [ ] 3. Auth — BetterAuth config, hooks, sign-in/up page, middleware
 - [ ] 4. Logging — Pino singleton, request logging middleware in hooks
