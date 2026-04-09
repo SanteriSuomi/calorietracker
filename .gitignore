@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output
+.build/
+.svelte-kit/
+build/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Runtime data
+data/
+*.db
+*.db-journal
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Drizzle
+drizzle/meta/
+!drizzle.config.ts
+
+# Logs
+*.log
+logs/
