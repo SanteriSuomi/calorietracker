@@ -94,6 +94,12 @@ docs/
 data/                        # Runtime data (gitignored)
 ```
 
+## Documentation
+
+- `docs/PLAN.md` — Living implementation plan with step checklist and design specs
+- `docs/stages/` — Implementation logs for each completed step (STAGE0, STAGE1, STAGE2, …)
+- Stage files record what was done, verification results, files created/modified/deleted, and design decisions
+
 ## Code Conventions
 
 - Svelte 5 runes only (no `$:` reactive syntax)

@@ -1,27 +1,49 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
+import { execSync } from 'node:child_process';
 import * as schema from '$lib/server/db/pg/schema';
 import { eq } from 'drizzle-orm';
 
-const PG_URL =
-	process.env.PG_TEST_URL ?? 'postgresql://postgres:postgres@localhost:5433/calorietracker';
+const CONTAINER_NAME = 'ct-test-pg';
+const PG_PORT = 5433;
+const PG_URL = `postgresql://postgres:postgres@localhost:${PG_PORT}/calorietracker`;
 
 let pool: Pool;
 let db: ReturnType<typeof drizzle>;
 
 const TEST_USER_ID = 'pg-test-user-1';
 
+async function waitForPostgres(maxAttempts = 30, intervalMs = 500): Promise<void> {
+	for (let i = 0; i < maxAttempts; i++) {
+		try {
+			const testPool = new Pool({ connectionString: PG_URL, ssl: false });
+			await testPool.query('SELECT 1');
+			await testPool.end();
+			return;
+		} catch {
+			await new Promise((r) => setTimeout(r, intervalMs));
+		}
+	}
+	throw new Error(`PostgreSQL not ready after ${(maxAttempts * intervalMs) / 1000}s`);
+}
+
 beforeAll(async () => {
+	execSync(
+		`docker run -d --name ${CONTAINER_NAME} ` +
+			`-e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres ` +
+			`-e POSTGRES_DB=calorietracker ` +
+			`-p ${PG_PORT}:5432 postgres:16-alpine`,
+		{ stdio: 'pipe' }
+	);
+
+	await waitForPostgres();
+
 	pool = new Pool({ connectionString: PG_URL, ssl: false });
 	db = drizzle({ client: pool, schema });
 
-	await db.delete(schema.meal);
-	await db.delete(schema.userSettings);
-	await db.delete(schema.account);
-	await db.delete(schema.session);
-	await db.delete(schema.verification);
-	await db.delete(schema.user);
+	await migrate(db, { migrationsFolder: './drizzle/pg' });
 
 	await db.insert(schema.user).values({
 		id: TEST_USER_ID,
@@ -31,10 +53,17 @@ beforeAll(async () => {
 		createdAt: new Date(),
 		updatedAt: new Date()
 	});
-});
+}, 30_000);
 
 afterAll(async () => {
-	await pool.end();
+	await pool?.end();
+	try {
+		execSync(`docker stop ${CONTAINER_NAME} && docker rm ${CONTAINER_NAME}`, {
+			stdio: 'pipe'
+		});
+	} catch {
+		// container may already be gone
+	}
 });
 
 describe('PG schema — meals', () => {

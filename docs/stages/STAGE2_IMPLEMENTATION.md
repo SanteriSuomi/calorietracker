@@ -129,6 +129,8 @@ Added scripts to `package.json`: `db:push:pg`, `db:generate:pg`, `db:migrate:pg`
 
 Updated `vite.config.ts` to include `tests/**/*.{test,spec}.{js,ts}` in the server test project.
 
+PG tests are fully self-contained — `beforeAll` starts a `postgres:16-alpine` Docker container, waits for readiness, runs Drizzle migrations, then inserts test data. `afterAll` stops and removes the container. No manual setup needed, `pnpm test` handles everything.
+
 ## Verification
 
 | Check                                                            | Result               |
