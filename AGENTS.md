@@ -40,9 +40,20 @@ src/
 ├── lib/
 │   ├── auth.ts              # BetterAuth server instance
 │   ├── auth-client.ts       # BetterAuth client (nanostores)
-│   ├── db/
-│   │   ├── index.ts         # Drizzle setup (provider switch via DATABASE_PROVIDER env)
-│   │   └── schema.ts        # All tables + audit base schema
+│   ├── server/
+│   │   ├── auth.ts          # BetterAuth config (drizzle adapter, dynamic provider)
+│   │   └── db/
+│   │       ├── index.ts     # Conditional driver init (DATABASE_PROVIDER switch)
+│   │       ├── schema.ts    # Re-exports sqlite/schema
+│   │       ├── shared/
+│   │       │   ├── constants.ts  # MEAL_SOURCES, DEFAULT_CALORIE_GOAL
+│   │       │   └── provider.ts   # DATABASE_PROVIDER reader
+│   │       ├── sqlite/
+│   │       │   ├── schema.ts     # All tables via sqliteTable + relations
+│   │       │   └── driver.ts     # drizzle-orm/libsql client
+│   │       └── pg/
+│   │           ├── schema.ts     # All tables via pgTable + relations
+│   │           └── driver.ts     # drizzle-orm/node-postgres client
 │   ├── crypto.ts            # AES-256-GCM encrypt/decrypt + scrypt key derivation
 │   ├── logger.ts            # Pino singleton + request logger helper
 │   ├── ai.ts                # Vercel AI SDK provider setup + prompt templates
@@ -69,9 +80,17 @@ src/
 │       └── settings/+server.ts
 ├── hooks.server.ts          # BetterAuth handler + auth middleware + logging
 └── app.html
+tests/
+├── db/
+│   ├── constants.test.ts    # Shared constants
+│   ├── sqlite.test.ts       # SQLite integration (in-memory)
+│   └── pg.test.ts           # PG integration (Docker)
 infra/
 ├── main.bicep               # Azure resources (Container Apps, ACR, PostgreSQL, Blob, KeyVault)
 └── parameters.json
+docs/
+├── PLAN.md                  # Implementation plan
+└── stages/                  # Stage implementation logs
 data/                        # Runtime data (gitignored)
 ```
 
@@ -92,7 +111,9 @@ data/                        # Runtime data (gitignored)
 - `libsql` → Drizzle libsql driver, local file, `ENCRYPTION_KEY` for encryption at rest
 - `pg` → Drizzle postgres driver, Azure PostgreSQL Flexible Server
 
-Same Drizzle schema definitions used by both — only adapter import differs.
+Separate schema files per dialect (`sqlite/schema.ts` uses `sqliteTable`, `pg/schema.ts` uses `pgTable`). Both must be kept in sync. `index.ts` uses top-level await with dynamic import to load only the active provider's driver.
+
+Drizzle configs: `drizzle.config.ts` (SQLite, default), `drizzle-pg.config.ts` (PG). Migration output goes to `drizzle/sqlite/` and `drizzle/pg/` respectively.
 
 ## Auth Middleware
 

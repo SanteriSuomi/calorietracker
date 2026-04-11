@@ -1,10 +1,7 @@
-import { drizzle } from 'drizzle-orm/libsql';
-import { createClient } from '@libsql/client';
-import * as schema from './schema';
-import { env } from '$env/dynamic/private';
+import { provider } from './shared/provider';
 
-if (!env.DATABASE_URL) throw new Error('DATABASE_URL is not set');
+export { provider as databaseProvider };
 
-const client = createClient({ url: env.DATABASE_URL });
+export type { DatabaseProvider } from './shared/provider';
 
-export const db = drizzle(client, { schema });
+export const { db } = await (provider === 'pg' ? import('./pg/driver') : import('./sqlite/driver'));

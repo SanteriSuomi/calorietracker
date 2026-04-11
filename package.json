@@ -15,8 +15,11 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"db:push": "drizzle-kit push",
+		"db:push:pg": "drizzle-kit push --config=drizzle-pg.config.ts",
 		"db:generate": "drizzle-kit generate",
+		"db:generate:pg": "drizzle-kit generate --config=drizzle-pg.config.ts",
 		"db:migrate": "drizzle-kit migrate",
+		"db:migrate:pg": "drizzle-kit migrate --config=drizzle-pg.config.ts",
 		"db:studio": "drizzle-kit studio",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
 	},

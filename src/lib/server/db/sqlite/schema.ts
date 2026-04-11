@@ -87,7 +87,9 @@ export const verification = sqliteTable(
 
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
-	accounts: many(account)
+	accounts: many(account),
+	meals: many(meal),
+	userSettings: many(userSettings)
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -100,6 +102,74 @@ export const sessionRelations = relations(session, ({ one }) => ({
 export const accountRelations = relations(account, ({ one }) => ({
 	user: one(user, {
 		fields: [account.userId],
+		references: [user.id]
+	})
+}));
+
+export const meal = sqliteTable(
+	'meal',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		date: text('date').notNull(),
+		description: text('description').notNull(),
+		calories: integer('calories').notNull(),
+		protein: integer('protein').notNull(),
+		carbs: integer('carbs').notNull(),
+		fat: integer('fat').notNull(),
+		imageFilename: text('image_filename'),
+		source: text('source').notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		createdBy: text('created_by').notNull(),
+		updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		updatedBy: text('updated_by').notNull()
+	},
+	(table) => [index('meal_userId_date_idx').on(table.userId, table.date)]
+);
+
+export const userSettings = sqliteTable('user_settings', {
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	userId: text('user_id')
+		.notNull()
+		.unique()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	dailyCalorieGoal: integer('daily_calorie_goal').notNull().default(2000),
+	dailyProteinGoal: integer('daily_protein_goal'),
+	dailyCarbsGoal: integer('daily_carbs_goal'),
+	dailyFatGoal: integer('daily_fat_goal'),
+	aiEndpointUrl: text('ai_endpoint_url'),
+	aiApiKey: text('ai_api_key'),
+	aiModel: text('ai_model'),
+	createdAt: integer('created_at', { mode: 'timestamp_ms' })
+		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+		.notNull(),
+	createdBy: text('created_by').notNull(),
+	updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+		.notNull(),
+	updatedBy: text('updated_by').notNull()
+});
+
+export const mealRelations = relations(meal, ({ one }) => ({
+	user: one(user, {
+		fields: [meal.userId],
+		references: [user.id]
+	})
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+	user: one(user, {
+		fields: [userSettings.userId],
 		references: [user.id]
 	})
 }));
