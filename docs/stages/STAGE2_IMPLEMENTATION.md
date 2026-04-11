@@ -149,6 +149,7 @@ Updated `vite.config.ts` to include `tests/**/*.{test,spec}.{js,ts}` in the serv
 - **AI API key in plaintext** — relies on DB-level encryption (libsql `encryptionKey` / PG TLS + Azure-managed encryption at rest).
 - **`imageFilename` as opaque text key** — storage adapter resolves to local path or Azure Blob path. Schema doesn't know about storage backend.
 - **Separate schema files per dialect** — Drizzle requires `sqliteTable` for libsql and `pgTable` for PG. No shared abstraction possible. Both files must be kept in sync manually.
+- **`auditColumns()` helper** — Drizzle has no table inheritance. Each dialect schema defines a local `auditColumns()` function returning `{ createdAt, createdBy, updatedAt, updatedBy }` with dialect-specific types (SQLite: `integer({ mode: 'timestamp_ms' })`, PG: `timestamp({ withTimezone: true })`). Spread into custom table definitions with `...auditColumns()`.
 
 ## Files created
 

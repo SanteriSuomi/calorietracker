@@ -1,6 +1,19 @@
 import { relations, sql } from 'drizzle-orm';
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 
+function auditColumns() {
+	return {
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		createdBy: text('created_by').notNull(),
+		updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		updatedBy: text('updated_by').notNull()
+	};
+}
+
 export const user = sqliteTable('user', {
 	id: text('id').primaryKey(),
 	name: text('name').notNull(),
@@ -123,14 +136,7 @@ export const meal = sqliteTable(
 		fat: integer('fat').notNull(),
 		imageFilename: text('image_filename'),
 		source: text('source').notNull(),
-		createdAt: integer('created_at', { mode: 'timestamp_ms' })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-			.notNull(),
-		createdBy: text('created_by').notNull(),
-		updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-			.notNull(),
-		updatedBy: text('updated_by').notNull()
+		...auditColumns()
 	},
 	(table) => [index('meal_userId_date_idx').on(table.userId, table.date)]
 );
@@ -150,14 +156,7 @@ export const userSettings = sqliteTable('user_settings', {
 	aiEndpointUrl: text('ai_endpoint_url'),
 	aiApiKey: text('ai_api_key'),
 	aiModel: text('ai_model'),
-	createdAt: integer('created_at', { mode: 'timestamp_ms' })
-		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-		.notNull(),
-	createdBy: text('created_by').notNull(),
-	updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
-		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-		.notNull(),
-	updatedBy: text('updated_by').notNull()
+	...auditColumns()
 });
 
 export const mealRelations = relations(meal, ({ one }) => ({

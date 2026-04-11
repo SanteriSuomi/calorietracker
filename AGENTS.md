@@ -100,7 +100,7 @@ data/                        # Runtime data (gitignored)
 - Explicit named imports, no wildcards or barrel files
 - Case-sensitive paths always
 - Strict TypeScript, types reflect reality (`?` for optional, `| null` for nullable)
-- Audit fields on all tables: `createdAt, createdBy, updatedAt, updatedBy`
+- Audit fields on all custom tables: `createdAt, createdBy, updatedAt, updatedBy` (via `auditColumns()` helper spread into table definitions)
 - Comments only for exotic functions, workarounds, complex algorithms
 - Logging: one wide event per request, emitted in `finally`, structured JSON via Pino
 

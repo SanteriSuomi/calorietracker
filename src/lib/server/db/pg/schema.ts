@@ -9,6 +9,15 @@ import {
 	index
 } from 'drizzle-orm/pg-core';
 
+function auditColumns() {
+	return {
+		createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+		createdBy: text('created_by').notNull(),
+		updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+		updatedBy: text('updated_by').notNull()
+	};
+}
+
 export const user = pgTable('user', {
 	id: text('id').primaryKey(),
 	name: text('name').notNull(),
@@ -125,10 +134,7 @@ export const meal = pgTable(
 		fat: integer('fat').notNull(),
 		imageFilename: text('image_filename'),
 		source: text('source').notNull(),
-		createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-		createdBy: text('created_by').notNull(),
-		updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-		updatedBy: text('updated_by').notNull()
+		...auditColumns()
 	},
 	(table) => [index('meal_userId_date_idx').on(table.userId, table.date)]
 );
@@ -149,10 +155,7 @@ export const userSettings = pgTable(
 		aiEndpointUrl: text('ai_endpoint_url'),
 		aiApiKey: text('ai_api_key'),
 		aiModel: text('ai_model'),
-		createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-		createdBy: text('created_by').notNull(),
-		updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-		updatedBy: text('updated_by').notNull()
+		...auditColumns()
 	},
 	(table) => [uniqueIndex('user_settings_userId_key').on(table.userId)]
 );
