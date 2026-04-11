@@ -1,3 +1,11 @@
+## Project Configuration
+
+- **Language**: TypeScript
+- **Package Manager**: pnpm
+- **Add-ons**: tailwindcss, drizzle, better-auth, vitest, sveltekit-adapter, prettier, eslint
+
+---
+
 # AGENTS.md
 
 AI agent context file for the CalorieTracker project.
@@ -80,6 +88,7 @@ data/                        # Runtime data (gitignored)
 ## Database Provider Switching
 
 `DATABASE_PROVIDER` env var selects the adapter:
+
 - `libsql` → Drizzle libsql driver, local file, `ENCRYPTION_KEY` for encryption at rest
 - `pg` → Drizzle postgres driver, Azure PostgreSQL Flexible Server
 
@@ -88,6 +97,7 @@ Same Drizzle schema definitions used by both — only adapter import differs.
 ## Auth Middleware
 
 `hooks.server.ts` handles:
+
 1. BetterAuth `svelteKitHandler` for auth routes
 2. `auth.api.getSession()` on all `/api/*` routes → 401 if unauthenticated
 3. Populate `event.locals.session` + `event.locals.user`
@@ -116,4 +126,5 @@ AZURE_BLOB_CONNECTION_STRING=  # Azure deployment only
 ## Testing
 
 After changes, run in order (fail fast):
+
 1. Type check → 2. Lint → 3. Unit tests → 4. Integration tests

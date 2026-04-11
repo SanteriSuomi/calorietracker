@@ -1,35 +1,25 @@
-# Dependencies
-node_modules/
+node_modules
 
-# Build output
-.build/
-.svelte-kit/
-build/
-
-# Environment
-.env
-.env.*
-!.env.example
-
-# Runtime data
-data/
-*.db
-*.db-journal
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
 
 # OS
 .DS_Store
 Thumbs.db
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
 
-# Drizzle
-drizzle/meta/
-!drizzle.config.ts
-
-# Logs
-*.log
-logs/
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+# SQLite
+*.db
