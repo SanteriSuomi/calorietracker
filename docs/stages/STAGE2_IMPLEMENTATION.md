@@ -1,6 +1,7 @@
 # Step 2: Database — Implementation Log
 
 **Date:** 2026-04-11
+**Commits:** `182630a`, `bd80087`, `3d50959`
 **Status:** Complete
 
 ## What was done
@@ -13,42 +14,36 @@ Implemented separate Drizzle ORM schemas for both libsql (SQLite) and PostgreSQL
 
 **`meal`**
 
-| Column          | Type                                  | Constraints                                 | Notes                                                                         |
-| --------------- | ------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------- |
-| `id`            | `text`                                | PK, `$defaultFn(() => crypto.randomUUID())` | Matches BetterAuth text PK convention                                         |
-| `userId`        | `text`                                | FK → `user.id`, cascade delete              |                                                                               |
-| `date`          | `text`                                | not null                                    | `YYYY-MM-DD` format                                                           |
-| `description`   | `text`                                | not null                                    |                                                                               |
-| `calories`      | `integer`                             | not null                                    | kcal                                                                          |
-| `protein`       | `integer`                             | not null                                    | grams                                                                         |
-| `carbs`         | `integer`                             | not null                                    | grams                                                                         |
-| `fat`           | `integer`                             | not null                                    | grams                                                                         |
-| `imageFilename` | `text`                                | nullable                                    | Opaque storage key, resolved by adapter                                       |
-| `source`        | `text`                                | not null                                    | `"manual" \| "ai_text" \| "ai_vision" \| "ai_text_vision"` — validated in app |
-| `createdAt`     | `integer` (sqlite) / `timestamp` (pg) | not null, default now                       |                                                                               |
-| `createdBy`     | `text`                                | not null                                    |                                                                               |
-| `updatedAt`     | `integer` (sqlite) / `timestamp` (pg) | not null, default now                       |                                                                               |
-| `updatedBy`     | `text`                                | not null                                    |                                                                               |
+| Column          | Type      | Constraints                                 | Notes                                                                         |
+| --------------- | --------- | ------------------------------------------- | ----------------------------------------------------------------------------- |
+| `id`            | `text`    | PK, `$defaultFn(() => crypto.randomUUID())` | Matches BetterAuth text PK convention                                         |
+| `userId`        | `text`    | FK → `user.id`, cascade delete              |                                                                               |
+| `date`          | `text`    | not null                                    | `YYYY-MM-DD` format                                                           |
+| `description`   | `text`    | not null                                    |                                                                               |
+| `calories`      | `integer` | not null                                    | kcal                                                                          |
+| `protein`       | `integer` | not null                                    | grams                                                                         |
+| `carbs`         | `integer` | not null                                    | grams                                                                         |
+| `fat`           | `integer` | not null                                    | grams                                                                         |
+| `imageFilename` | `text`    | nullable                                    | Opaque storage key, resolved by adapter                                       |
+| `source`        | `text`    | not null                                    | `"manual" \| "ai_text" \| "ai_vision" \| "ai_text_vision"` — validated in app |
+| _audit fields_  |           |                                             | Spread via `...auditColumns()` helper                                         |
 
 Index: `meal_userId_date_idx` on `(userId, date)` for day-view queries.
 
 **`user_settings`**
 
-| Column             | Type                                  | Constraints                                 | Notes                                     |
-| ------------------ | ------------------------------------- | ------------------------------------------- | ----------------------------------------- |
-| `id`               | `text`                                | PK, `$defaultFn(() => crypto.randomUUID())` |                                           |
-| `userId`           | `text`                                | FK → `user.id`, unique, cascade delete      | 1:1 with user                             |
-| `dailyCalorieGoal` | `integer`                             | not null, default `2000`                    |                                           |
-| `dailyProteinGoal` | `integer`                             | nullable                                    | grams                                     |
-| `dailyCarbsGoal`   | `integer`                             | nullable                                    | grams                                     |
-| `dailyFatGoal`     | `integer`                             | nullable                                    | grams                                     |
-| `aiEndpointUrl`    | `text`                                | nullable                                    | e.g. `https://api.openai.com/v1`          |
-| `aiApiKey`         | `text`                                | nullable                                    | Plaintext — DB-level encryption covers it |
-| `aiModel`          | `text`                                | nullable                                    | e.g. `gpt-4o`                             |
-| `createdAt`        | `integer` (sqlite) / `timestamp` (pg) | not null, default now                       |                                           |
-| `createdBy`        | `text`                                | not null                                    |                                           |
-| `updatedAt`        | `integer` (sqlite) / `timestamp` (pg) | not null, default now                       |                                           |
-| `updatedBy`        | `text`                                | not null                                    |                                           |
+| Column             | Type      | Constraints                                 | Notes                                     |
+| ------------------ | --------- | ------------------------------------------- | ----------------------------------------- |
+| `id`               | `text`    | PK, `$defaultFn(() => crypto.randomUUID())` |                                           |
+| `userId`           | `text`    | FK → `user.id`, unique, cascade delete      | 1:1 with user                             |
+| `dailyCalorieGoal` | `integer` | not null, default `2000`                    |                                           |
+| `dailyProteinGoal` | `integer` | nullable                                    | grams                                     |
+| `dailyCarbsGoal`   | `integer` | nullable                                    | grams                                     |
+| `dailyFatGoal`     | `integer` | nullable                                    | grams                                     |
+| `aiEndpointUrl`    | `text`    | nullable                                    | e.g. `https://api.openai.com/v1`          |
+| `aiApiKey`         | `text`    | nullable                                    | Plaintext — DB-level encryption covers it |
+| `aiModel`          | `text`    | nullable                                    | e.g. `gpt-4o`                             |
+| _audit fields_     |           |                                             | Spread via `...auditColumns()` helper     |
 
 #### BetterAuth tables (rewritten for each dialect)
 
@@ -177,10 +172,13 @@ tests/db/pg.test.ts
 ```
 src/lib/server/db/index.ts          # Rewritten for dual-provider
 src/lib/server/db/schema.ts         # Re-exports sqlite/schema
+src/lib/server/db/sqlite/schema.ts  # auditColumns() helper replacing hardcoded audit fields
+src/lib/server/db/pg/schema.ts      # auditColumns() helper replacing hardcoded audit fields
 src/lib/server/auth.ts              # Dynamic provider in drizzleAdapter
 drizzle.config.ts                   # Updated schema path + migration output
 package.json                        # Added PG drizzle scripts
 vite.config.ts                      # Added tests/ to server project include
+AGENTS.md                           # Updated project structure, docs section, auditColumns convention
 ```
 
 ## Files deleted
