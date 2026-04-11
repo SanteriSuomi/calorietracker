@@ -250,7 +250,7 @@ GOOGLE_CLIENT_SECRET=        # Optional
 - [x] 0. Project init — git init, .gitignore, PLAN.md, AGENTS.md, commit, push to GitHub
 - [x] 1. Scaffold — `sv create`, install all deps
 - [x] 2. Database — Drizzle schema with audit fields, dual-provider setup, initial migration
-- [ ] 3. Auth — BetterAuth config, hooks, sign-in/up page, middleware
+- [x] 3. Auth — BetterAuth config, hooks, sign-in/up page, middleware (Google OAuth deferred)
 - [ ] 4. Logging — Pino singleton, request logging middleware in hooks
 - [ ] 5. Main day view — CalorieDoughnut (Chart.js), DateNav, empty MealList
 - [ ] 6. Manual meal CRUD — ManualEntrySheet, API routes, DB operations

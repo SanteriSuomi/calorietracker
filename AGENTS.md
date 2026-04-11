@@ -8,7 +8,7 @@
 
 # AGENTS.md
 
-AI agent context file for the CalorieTracker project.
+AI agent context file for the CalorieTracker project. **Keep this file up-to-date** — when you add, remove, or significantly change files, modules, patterns, or conventions, update the relevant section below. Accuracy here saves context in future sessions.
 
 ## Project Overview
 
@@ -36,68 +36,23 @@ CalorieTracker is a mobile-first web app for tracking daily calorie and macro in
 ## Project Structure
 
 ```
-src/
-├── lib/
-│   ├── auth.ts              # BetterAuth server instance
-│   ├── auth-client.ts       # BetterAuth client (nanostores)
-│   ├── server/
-│   │   ├── auth.ts          # BetterAuth config (drizzle adapter, dynamic provider)
-│   │   └── db/
-│   │       ├── index.ts     # Conditional driver init (DATABASE_PROVIDER switch)
-│   │       ├── schema.ts    # Re-exports sqlite/schema
-│   │       ├── shared/
-│   │       │   ├── constants.ts  # MEAL_SOURCES, DEFAULT_CALORIE_GOAL
-│   │       │   └── provider.ts   # DATABASE_PROVIDER reader
-│   │       ├── sqlite/
-│   │       │   ├── schema.ts     # All tables via sqliteTable + relations
-│   │       │   └── driver.ts     # drizzle-orm/libsql client
-│   │       └── pg/
-│   │           ├── schema.ts     # All tables via pgTable + relations
-│   │           └── driver.ts     # drizzle-orm/node-postgres client
-│   ├── crypto.ts            # AES-256-GCM encrypt/decrypt + scrypt key derivation
-│   ├── logger.ts            # Pino singleton + request logger helper
-│   ├── ai.ts                # Vercel AI SDK provider setup + prompt templates
-│   ├── components/
-│   │   ├── ui/              # shadcn-svelte primitives
-│   │   ├── CalorieDoughnut.svelte
-│   │   ├── MealCard.svelte
-│   │   ├── MealList.svelte
-│   │   ├── ManualEntrySheet.svelte
-│   │   ├── AiInputBar.svelte
-│   │   └── DateNav.svelte
-│   └── utils.ts
-├── routes/
-│   ├── +layout.server.ts    # Auth gate, load session
-│   ├── +page.svelte         # Day view (main screen)
-│   ├── calendar/+page.svelte
-│   ├── settings/+page.svelte
-│   ├── auth/+page.svelte
-│   └── api/
-│       ├── meals/+server.ts
-│       ├── meals/[id]/+server.ts
-│       ├── ai/analyze/+server.ts
-│       ├── images/[filename]/+server.ts
-│       └── settings/+server.ts
-├── hooks.server.ts          # BetterAuth handler + auth middleware + logging
-└── app.html
-tests/
-├── db/
-│   ├── constants.test.ts    # Shared constants
-│   ├── sqlite.test.ts       # SQLite integration (in-memory)
-│   └── pg.test.ts           # PG integration (Docker)
-infra/
-├── main.bicep               # Azure resources (Container Apps, ACR, PostgreSQL, Blob, KeyVault)
-└── parameters.json
-docs/
-├── PLAN.md                  # Implementation plan
-└── stages/                  # Stage implementation logs
-data/                        # Runtime data (gitignored)
+src/lib/server/       # Server-only code (auth, db, constants)
+src/lib/components/   # Shared Svelte components
+src/routes/           # SvelteKit routes (pages + API endpoints)
+src/hooks.server.ts   # Auth middleware (session extraction + route guards)
+tests/                # Vitest unit & integration tests
+infra/                # Bicep IaC templates
+docs/                 # PLAN.md, stage logs, schema docs
+data/                 # Runtime data (gitignored)
 ```
+
+Key entry points: `src/lib/server/auth.ts` (BetterAuth config), `src/lib/auth-client.ts` (client-side auth), `src/lib/server/constants.ts` (route constants), `src/lib/server/db/` (dual-provider DB with Drizzle).
 
 ## Documentation
 
 - `docs/PLAN.md` — Living implementation plan with step checklist and design specs
-- `docs/stages/` — Implementation logs for each completed step (STAGE0, STAGE1, STAGE2, …)
+- `docs/stages/` — Implementation logs for each completed step (STAGE0..STAGE3)
+- `docs/` — Schema, architecture, and design docs
 - Stage files record what was done, verification results, files created/modified/deleted, and design decisions
 
 ## Code Conventions
@@ -123,12 +78,25 @@ Drizzle configs: `drizzle.config.ts` (SQLite, default), `drizzle-pg.config.ts` (
 
 ## Auth Middleware
 
-`hooks.server.ts` handles:
+`hooks.server.ts` uses `sequence(handleBetterAuth, handleAuthGuard)`:
 
-1. BetterAuth `svelteKitHandler` for auth routes
-2. `auth.api.getSession()` on all `/api/*` routes → 401 if unauthenticated
-3. Populate `event.locals.session` + `event.locals.user`
-4. Request logging (Pino wide event with method, path, requestId, userId, statusCode, duration_ms)
+1. **handleBetterAuth**: `auth.api.getSession()` extracts session into `event.locals`, then `svelteKitHandler` processes BetterAuth internal routes (`/api/auth/*`)
+2. **handleAuthGuard**: enforces auth on all other routes:
+   - `/api/auth/*` → pass through (BetterAuth needs its own endpoints unauthenticated)
+   - `/api/*` without session → 401 JSON
+   - Page routes without session → 302 redirect to `/auth`
+   - `/auth` with session → 302 redirect to `/`
+   - Skips all checks during `building` (static build)
+
+Route paths are defined in `src/lib/server/constants.ts`: `API_BASE`, `AUTH_API_ROUTE`, `AUTH_PAGE_ROUTE`, `API_VERSION`.
+
+## Auth Client
+
+`src/lib/auth-client.ts` exports `authClient` (for API calls like `signOut()`) and `useSession` (nanostore Atom for reactive session state). Uses `createAuthClient` from `better-auth/svelte`. Sign-out uses `authClient.signOut()` + `window.location.href` (avoids ESLint `no-navigation-without-resolve` rule that flags `goto()` in event handlers).
+
+## Auth Page
+
+`/auth` is a single page with client-side toggle between sign-in and sign-up modes. Form actions `?/signIn` and `?/signUp` call BetterAuth server API. Error messages displayed via `form.message`. Google OAuth is deferred to a future step.
 
 ## AI Integration
 
@@ -141,13 +109,15 @@ Drizzle configs: `drizzle.config.ts` (SQLite, default), `drizzle-pg.config.ts` (
 ## Key Environment Variables
 
 ```
+ORIGIN=                    # Public URL of the app (used by BetterAuth baseURL)
 BETTER_AUTH_SECRET=       # >=32 chars, high entropy
-BETTER_AUTH_URL=          # Public URL of the app
 ENCRYPTION_SECRET=        # For DB encryption + file key derivation
 DATABASE_PROVIDER=libsql  # or pg
 DATABASE_URL=             # Connection string
 ENCRYPTION_KEY=           # libsql encryption key (self-hosted only)
 AZURE_BLOB_CONNECTION_STRING=  # Azure deployment only
+GOOGLE_CLIENT_ID=            # Optional (deferred)
+GOOGLE_CLIENT_SECRET=        # Optional (deferred)
 ```
 
 ## Testing
@@ -155,3 +125,5 @@ AZURE_BLOB_CONNECTION_STRING=  # Azure deployment only
 After changes, run in order (fail fast):
 
 1. Type check → 2. Lint → 3. Unit tests → 4. Integration tests
+
+For web apps: use `browser-automation` skill to verify UI changes work.

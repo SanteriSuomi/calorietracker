@@ -1,6 +1,8 @@
 import type { Handle } from '@sveltejs/kit';
 import { building } from '$app/environment';
+import { sequence } from '@sveltejs/kit/hooks';
 import { auth } from '$lib/server/auth';
+import { AUTH_API_ROUTE, AUTH_PAGE_ROUTE, API_BASE } from '$lib/server/constants';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
@@ -14,4 +16,38 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	return svelteKitHandler({ event, resolve, auth, building });
 };
 
-export const handle: Handle = handleBetterAuth;
+const handleAuthGuard: Handle = async ({ event, resolve }) => {
+	if (building) return resolve(event);
+
+	const { pathname } = event.url;
+	const isAuthPage = pathname === AUTH_PAGE_ROUTE;
+	const isApiRoute = pathname.startsWith(API_BASE);
+
+	if (pathname.startsWith(AUTH_API_ROUTE)) {
+		return resolve(event);
+	}
+
+	if (!event.locals.user) {
+		if (isApiRoute) {
+			return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+				status: 401,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+		if (!isAuthPage) {
+			return new Response(null, {
+				status: 302,
+				headers: { Location: AUTH_PAGE_ROUTE }
+			});
+		}
+	} else if (isAuthPage) {
+		return new Response(null, {
+			status: 302,
+			headers: { Location: '/' }
+		});
+	}
+
+	return resolve(event);
+};
+
+export const handle: Handle = sequence(handleBetterAuth, handleAuthGuard);
