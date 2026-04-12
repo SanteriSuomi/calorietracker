@@ -2,7 +2,7 @@
 
 - **Language**: TypeScript
 - **Package Manager**: pnpm
-- **Add-ons**: tailwindcss, drizzle, better-auth, vitest, sveltekit-adapter, prettier, eslint
+- **Add-ons**: tailwindcss, drizzle, better-auth, vitest, sveltekit-adapter, biome
 
 ---
 
@@ -52,7 +52,7 @@ Key entry points: `src/lib/server/auth.ts` (BetterAuth config), `src/lib/auth-cl
 
 - `docs/PLAN.md` — Living implementation plan with step checklist and design specs
 - `docs/stages/` — Implementation logs for each completed step (STAGE0..STAGE3)
-- `docs/` — Schema, architecture, and design docs
+- `docs/` — Schema, architecture, design docs, and transition logs
 - Stage files record what was done, verification results, files created/modified/deleted, and design decisions
 
 ## Code Conventions
@@ -64,6 +64,16 @@ Key entry points: `src/lib/server/auth.ts` (BetterAuth config), `src/lib/auth-cl
 - Audit fields on all custom tables: `createdAt, createdBy, updatedAt, updatedBy` (via `auditColumns()` helper spread into table definitions)
 - Comments only for exotic functions, workarounds, complex algorithms
 - Logging: one wide event per request, emitted in `finally`, structured JSON via Pino
+
+## Linting & Formatting
+
+- **Tool**: Biome (`@biomejs/biome`) — replaces Prettier + ESLint
+- **Config**: `biome.json` at project root
+- **Commands**: `pnpm lint` (check only), `pnpm format` (check + fix)
+- **Svelte support**: experimental (`html.experimentalFullSupportEnabled: true`)
+- **Svelte overrides**: `noUnusedVariables`, `noUnusedImports`, `useConst`, `useImportType` disabled for `.svelte` files (false positives until cross-language support lands)
+- **Tailwind**: `css.parser.tailwindDirectives: true` (replaces `prettier-plugin-tailwindcss`)
+- **Known issue**: Biome's Svelte formatter may produce incorrect indentation in `<script>` blocks — review manually after bulk reformatting
 
 ## Database Provider Switching
 
@@ -92,7 +102,7 @@ Route paths are defined in `src/lib/server/constants.ts`: `API_BASE`, `AUTH_API_
 
 ## Auth Client
 
-`src/lib/auth-client.ts` exports `authClient` (for API calls like `signOut()`) and `useSession` (nanostore Atom for reactive session state). Uses `createAuthClient` from `better-auth/svelte`. Sign-out uses `authClient.signOut()` + `window.location.href` (avoids ESLint `no-navigation-without-resolve` rule that flags `goto()` in event handlers).
+`src/lib/auth-client.ts` exports `authClient` (for API calls like `signOut()`) and `useSession` (nanostore Atom for reactive session state). Uses `createAuthClient` from `better-auth/svelte`. Sign-out uses `authClient.signOut()` + `window.location.href` to force a full page reload.
 
 ## Auth Page
 

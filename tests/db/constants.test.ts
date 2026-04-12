@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { MEAL_SOURCES, DEFAULT_CALORIE_GOAL } from '$lib/server/db/shared/constants';
+import { describe, expect, it } from 'vitest';
+import { DEFAULT_CALORIE_GOAL, MEAL_SOURCES } from '$lib/server/db/shared/constants';
 
 describe('shared constants', () => {
 	it('has correct meal source values', () => {

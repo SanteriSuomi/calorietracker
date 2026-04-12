@@ -1,12 +1,12 @@
 import { relations } from 'drizzle-orm';
 import {
+	boolean,
+	index,
+	integer,
 	pgTable,
 	text,
-	integer,
-	boolean,
 	timestamp,
-	uniqueIndex,
-	index
+	uniqueIndex
 } from 'drizzle-orm/pg-core';
 
 function auditColumns() {

@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { createClient } from '@libsql/client';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
-import { createClient } from '@libsql/client';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import * as schema from '$lib/server/db/sqlite/schema';
-import { eq } from 'drizzle-orm';
 
 const client = createClient({ url: ':memory:' });
 const db = drizzle(client, { schema });

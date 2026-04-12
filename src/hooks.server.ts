@@ -1,9 +1,9 @@
 import type { Handle } from '@sveltejs/kit';
-import { building } from '$app/environment';
 import { sequence } from '@sveltejs/kit/hooks';
-import { auth } from '$lib/server/auth';
-import { AUTH_API_ROUTE, AUTH_PAGE_ROUTE, API_BASE } from '$lib/server/constants';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
+import { building } from '$app/environment';
+import { auth } from '$lib/server/auth';
+import { API_BASE, AUTH_API_ROUTE, AUTH_PAGE_ROUTE } from '$lib/server/constants';
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	const session = await auth.api.getSession({ headers: event.request.headers });

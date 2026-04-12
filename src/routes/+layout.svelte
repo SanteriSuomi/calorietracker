@@ -1,14 +1,14 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
-	import { authClient } from '$lib/auth-client';
+		import favicon from '$lib/assets/favicon.svg';
+		import { authClient } from '$lib/auth-client';
 
-	let { children, data } = $props();
+		let { children, data } = $props();
 
-	async function handleSignOut() {
-		await authClient.signOut();
-		window.location.href = '/';
-	}
+		async function handleSignOut() {
+			await authClient.signOut();
+			window.location.href = '/';
+		}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -21,6 +21,7 @@
 				<div class="flex items-center gap-3">
 					<span class="text-sm text-gray-500">{data.user.email}</span>
 					<button
+						type="button"
 						onclick={handleSignOut}
 						class="rounded-md px-2.5 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
 					>
