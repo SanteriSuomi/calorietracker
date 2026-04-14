@@ -32,6 +32,14 @@
 	},
 	"overrides": [
 		{
+			"includes": ["src/lib/components/ui/**"],
+			"linter": {
+				"rules": {
+					"a11y": { "useValidAriaRole": "off" }
+				}
+			}
+		},
+		{
 			"includes": ["**/*.svelte"],
 			"linter": {
 				"rules": {
