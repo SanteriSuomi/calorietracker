@@ -51,9 +51,9 @@ Key entry points: `src/lib/server/auth.ts` (BetterAuth config), `src/lib/auth-cl
 ## Documentation
 
 - `docs/PLAN.md` — Living implementation plan with step checklist and design specs
-- `docs/stages/` — Implementation logs for each completed step (STAGE0..STAGE3)
+- `docs/plans/` — Detailed implementation plans written **before** coding each step (e.g., `STEP4_LOGGING.md`, `STEP5_DAY_VIEW.md`). These document file specs, implementation order, risks, and success criteria. Updated if scope changes during implementation.
+- `docs/stages/` — Implementation logs written **after** completing each step (STAGE0..STAGE3+). Record what was done, verification results, files created/modified/deleted, and design decisions.
 - `docs/` — Schema, architecture, design docs, and transition logs
-- Stage files record what was done, verification results, files created/modified/deleted, and design decisions
 
 ## Code Conventions
 
