@@ -152,6 +152,17 @@ npx pm2 logs calorietracker --lines 20 --nostream        # view logs
 npx pm2 stop calorietracker && npx pm2 delete calorietracker  # clean up
 ```
 
+## Dev Server & Browser Verification
+
+The bash tool runs commands synchronously — a long-running process like `pnpm run dev` blocks the session until timeout, then gets killed. Backgrounding (`&`, `nohup`) does not help; the process dies when the bash session ends.
+
+**Pattern:** Use a general Task agent to start the dev server (it stays alive as long as the agent runs), then run `agent-browser` commands in the main session to verify the UI. The dev server dies when the Task agent completes or the session ends — no cleanup needed.
+
+**Steps:**
+1. Task agent: `pnpm run dev` in the project directory (stays running)
+2. Main session: `agent-browser` commands against `http://localhost:5173` (or whichever port Vite picks)
+3. Done — no explicit teardown needed
+
 ## Commit Conventions
 
 - One commit per session — amend the existing commit as work progresses
