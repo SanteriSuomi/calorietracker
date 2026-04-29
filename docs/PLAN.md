@@ -251,7 +251,7 @@ GOOGLE_CLIENT_SECRET=        # Optional
 - [x] 1. Scaffold — `sv create`, install all deps
 - [x] 2. Database — Drizzle schema with audit fields, dual-provider setup, initial migration
 - [x] 3. Auth — BetterAuth config, hooks, sign-in/up page, middleware (Google OAuth deferred)
-- [ ] 4. Logging — Pino singleton, request logging middleware in hooks
+- [x] 4. Logging — Pino singleton, request logging middleware in hooks
 - [ ] 5. Main day view — CalorieDoughnut (Chart.js), DateNav, empty MealList
 - [ ] 6. Manual meal CRUD — ManualEntrySheet, API routes, DB operations
 - [ ] 7. AI integration — Settings page, Vercel AI SDK provider, analyze endpoint, AiInputBar

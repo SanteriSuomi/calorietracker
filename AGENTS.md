@@ -39,7 +39,7 @@ CalorieTracker is a mobile-first web app for tracking daily calorie and macro in
 src/lib/server/       # Server-only code (auth, db, constants)
 src/lib/components/   # Shared Svelte components
 src/routes/           # SvelteKit routes (pages + API endpoints)
-src/hooks.server.ts   # Auth middleware (session extraction + route guards)
+src/hooks.server.ts   # Logging middleware + auth middleware (session extraction + route guards)
 tests/                # Vitest unit & integration tests
 infra/                # Bicep IaC templates
 docs/                 # PLAN.md, stage logs, schema docs
@@ -53,6 +53,7 @@ Key entry points: `src/lib/server/auth.ts` (BetterAuth config), `src/lib/auth-cl
 - `docs/PLAN.md` — Living implementation plan with step checklist and design specs
 - `docs/plans/` — Detailed implementation plans written **before** coding each step (e.g., `STEP4_LOGGING.md`, `STEP5_DAY_VIEW.md`). These document file specs, implementation order, risks, and success criteria. Updated if scope changes during implementation.
 - `docs/stages/` — Implementation logs written **after** completing each step (STAGE0..STAGE3+). Record what was done, verification results, files created/modified/deleted, and design decisions.
+- `docs/agents/` — Agent-oriented reference docs (e.g., `pm2.md` for dev server process management)
 - `docs/` — Schema, architecture, design docs, and transition logs
 
 ## Code Conventions
@@ -63,7 +64,8 @@ Key entry points: `src/lib/server/auth.ts` (BetterAuth config), `src/lib/auth-cl
 - Strict TypeScript, types reflect reality (`?` for optional, `| null` for nullable)
 - Audit fields on all custom tables: `createdAt, createdBy, updatedAt, updatedBy` (via `auditColumns()` helper spread into table definitions)
 - Comments only for exotic functions, workarounds, complex algorithms
-- Logging: one wide event per request, emitted in `finally`, structured JSON via Pino
+- Logging: one wide event per request, emitted in `finally`, structured JSON via Pino. Handlers use `addLogContext()` from `$lib/server/logger` to add business context; the middleware emits the event automatically.
+- Two levels only: `logger.info()` and `logger.error()`, controlled by `LOG_LEVEL` env var (`verbose`/`info`/`error`/`none`, default `info`)
 
 ## Linting & Formatting
 
@@ -88,10 +90,11 @@ Drizzle configs: `drizzle.config.ts` (SQLite, default), `drizzle-pg.config.ts` (
 
 ## Auth Middleware
 
-`hooks.server.ts` uses `sequence(handleBetterAuth, handleAuthGuard)`:
+`hooks.server.ts` uses `sequence(handleLogging, handleBetterAuth, handleAuthGuard)`:
 
-1. **handleBetterAuth**: `auth.api.getSession()` extracts session into `event.locals`, then `svelteKitHandler` processes BetterAuth internal routes (`/api/auth/*`)
-2. **handleAuthGuard**: enforces auth on all other routes:
+1. **handleLogging** (outermost): generates `requestId`, initializes `logContext`, emits one wide event per request in `finally` with `method, path, requestId, userId, statusCode, duration_ms, outcome, detail` + any `logContext` fields. Handlers add context via `addLogContext(locals, data)` from `$lib/server/logger`.
+	2. **handleBetterAuth**: `auth.api.getSession()` extracts session into `event.locals`, then `svelteKitHandler` processes BetterAuth internal routes (`/api/auth/*`)
+	3. **handleAuthGuard**: enforces auth on all other routes:
    - `/api/auth/*` → pass through (BetterAuth needs its own endpoints unauthenticated)
    - `/api/*` without session → 401 JSON
    - Page routes without session → 302 redirect to `/auth`
@@ -125,6 +128,7 @@ ENCRYPTION_SECRET=        # For DB encryption + file key derivation
 DATABASE_PROVIDER=libsql  # or pg
 DATABASE_URL=             # Connection string
 ENCRYPTION_KEY=           # libsql encryption key (self-hosted only)
+LOG_LEVEL=info            # verbose|info|error|none — controls Pino log level
 AZURE_BLOB_CONNECTION_STRING=  # Azure deployment only
 GOOGLE_CLIENT_ID=            # Optional (deferred)
 GOOGLE_CLIENT_SECRET=        # Optional (deferred)
@@ -137,3 +141,19 @@ After changes, run in order (fail fast):
 1. Type check → 2. Lint → 3. Unit tests → 4. Integration tests
 
 For web apps: use `browser-automation` skill to verify UI changes work.
+
+## Dev Server (pm2)
+
+Use pm2 when testing the running server (e.g., verifying logs, auth flows). Full guide: `docs/agents/pm2.md`.
+
+```bash
+npx pm2 start scripts/pm2-dev.mjs --name calorietracker  # start
+npx pm2 logs calorietracker --lines 20 --nostream        # view logs
+npx pm2 stop calorietracker && npx pm2 delete calorietracker  # clean up
+```
+
+## Commit Conventions
+
+- One commit per session — amend the existing commit as work progresses
+- Only commit and push when explicitly asked
+- Imperative form ("Add feature" not "Added feature")

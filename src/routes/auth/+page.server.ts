@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import { auth } from '$lib/server/auth';
+import { addLogContext } from '$lib/server/logger';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -11,7 +12,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	signIn: async ({ request }) => {
+	signIn: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const email = formData.get('email')?.toString() ?? '';
 		const password = formData.get('password')?.toString() ?? '';
@@ -20,16 +21,29 @@ export const actions: Actions = {
 			await auth.api.signInEmail({
 				body: { email, password }
 			});
+			addLogContext(locals, {
+				detail: 'Sign-in successful',
+				authAction: 'signIn'
+			});
 		} catch (error) {
 			if (error instanceof APIError) {
+				addLogContext(locals, {
+					detail: `Sign-in failed: ${error.message}`,
+					authAction: 'signIn',
+					authError: error.message
+				});
 				return fail(400, { message: error.message || 'Sign in failed', mode: 'signin' });
 			}
+			addLogContext(locals, {
+				detail: 'Sign-in failed: unexpected error',
+				authAction: 'signIn'
+			});
 			return fail(500, { message: 'Unexpected error', mode: 'signin' });
 		}
 
 		return redirect(302, '/');
 	},
-	signUp: async ({ request }) => {
+	signUp: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const email = formData.get('email')?.toString() ?? '';
 		const password = formData.get('password')?.toString() ?? '';
@@ -39,10 +53,23 @@ export const actions: Actions = {
 			await auth.api.signUpEmail({
 				body: { email, password, name }
 			});
+			addLogContext(locals, {
+				detail: 'Sign-up successful',
+				authAction: 'signUp'
+			});
 		} catch (error) {
 			if (error instanceof APIError) {
+				addLogContext(locals, {
+					detail: `Sign-up failed: ${error.message}`,
+					authAction: 'signUp',
+					authError: error.message
+				});
 				return fail(400, { message: error.message || 'Registration failed', mode: 'signup' });
 			}
+			addLogContext(locals, {
+				detail: 'Sign-up failed: unexpected error',
+				authAction: 'signUp'
+			});
 			return fail(500, { message: 'Unexpected error', mode: 'signup' });
 		}
 
