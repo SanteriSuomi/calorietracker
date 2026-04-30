@@ -1,11 +1,11 @@
 <script lang="ts">
 	import CalorieDoughnut from '$lib/components/CalorieDoughnut.svelte';
 	import DateNav from '$lib/components/DateNav.svelte';
+	import InputBar from '$lib/components/InputBar.svelte';
 	import MacroSummary from '$lib/components/MacroSummary.svelte';
 	import ManualEntrySheet from '$lib/components/ManualEntrySheet.svelte';
 	import MealList from '$lib/components/MealList.svelte';
 	import { formatDate } from '$lib/utils/date';
-	import { Plus } from '@lucide/svelte';
 	import { invalidateAll } from '$app/navigation';
 	import type { Meal, MealFormData } from '$lib/types';
 	import type { PageData } from './$types';
@@ -14,6 +14,7 @@
 
 	let sheetOpen = $state(false);
 	let editingMeal = $state<Meal | null>(null);
+	let aiPrefill = $state<MealFormData | null>(null);
 
 	const totals = $derived(
 		data.meals.reduce(
@@ -56,12 +57,20 @@
 		await invalidateAll();
 	}
 
-	function openAddSheet() {
+	function handleAiResult(formData: MealFormData) {
+		aiPrefill = formData;
+		editingMeal = null;
+		sheetOpen = true;
+	}
+
+	function openManualEntry() {
+		aiPrefill = null;
 		editingMeal = null;
 		sheetOpen = true;
 	}
 
 	function openEditSheet(meal: Meal) {
+		aiPrefill = null;
 		editingMeal = meal;
 		sheetOpen = true;
 	}
@@ -69,6 +78,12 @@
 	function handleClose() {
 		editingMeal = null;
 	}
+
+	$effect(() => {
+		if (!sheetOpen) {
+			aiPrefill = null;
+		}
+	});
 </script>
 
 <svelte:head>
@@ -85,17 +100,19 @@
 
 <MealList meals={data.meals} onEdit={openEditSheet} onDelete={handleDeleteMeal} />
 
-<button
-	onclick={openAddSheet}
-	class="fixed bottom-6 right-6 z-40 rounded-full bg-primary p-4 text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
-	aria-label="Add meal"
->
-	<Plus size={24} />
-</button>
+<div class="h-28"></div>
+
+<InputBar
+	date={data.date}
+	aiConfigured={data.aiConfigured}
+	onAiResult={handleAiResult}
+	onManualEntry={openManualEntry}
+/>
 
 <ManualEntrySheet
 	bind:open={sheetOpen}
 	meal={editingMeal}
+	prefill={aiPrefill}
 	date={data.date}
 	onSubmit={editingMeal ? handleEditMeal : handleAddMeal}
 	onClose={handleClose}

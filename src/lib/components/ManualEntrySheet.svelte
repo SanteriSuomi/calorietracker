@@ -1,18 +1,22 @@
 <script lang="ts">
 	import { Sheet, SheetContent, SheetTitle, SheetDescription } from '$lib/components/ui/sheet';
 	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
 	import type { Meal, MealFormData } from '$lib/types';
 	import { isValidDate, today } from '$lib/utils/date';
 
 	let {
 		open = $bindable(false),
 		meal = undefined,
+		prefill = undefined,
 		date,
 		onSubmit,
 		onClose
 	}: {
 		open?: boolean;
 		meal?: Meal | null;
+		prefill?: MealFormData | null;
 		date: string;
 		onSubmit: (data: MealFormData) => Promise<void>;
 		onClose: () => void;
@@ -29,11 +33,25 @@
 
 	$effect(() => {
 		if (open) {
-			description = meal?.description ?? '';
-			calories = meal?.calories?.toString() ?? '';
-			protein = meal?.protein?.toString() ?? '0';
-			carbs = meal?.carbs?.toString() ?? '0';
-			fat = meal?.fat?.toString() ?? '0';
+			if (meal) {
+				description = meal.description ?? '';
+				calories = meal.calories?.toString() ?? '';
+				protein = meal.protein?.toString() ?? '0';
+				carbs = meal.carbs?.toString() ?? '0';
+				fat = meal.fat?.toString() ?? '0';
+			} else if (prefill) {
+				description = prefill.description ?? '';
+				calories = prefill.calories?.toString() ?? '';
+				protein = prefill.protein?.toString() ?? '0';
+				carbs = prefill.carbs?.toString() ?? '0';
+				fat = prefill.fat?.toString() ?? '0';
+			} else {
+				description = '';
+				calories = '';
+				protein = '0';
+				carbs = '0';
+				fat = '0';
+			}
 			dateInput = date;
 			errors = {};
 		}
@@ -88,78 +106,78 @@
 
 <Sheet bind:open>
 	<SheetContent side="bottom" onInteractOutside={handleClose} onEscapeKeydown={handleClose}>
-		<SheetTitle>{meal ? 'Edit Meal' : 'Add Meal'}</SheetTitle>
+		<SheetTitle>{meal ? 'Edit Meal' : prefill ? 'Add Meal (AI)' : 'Add Meal'}</SheetTitle>
 		<SheetDescription>{meal ? 'Update meal details' : 'Log a new meal'}</SheetDescription>
 
 		<form onsubmit={handleSubmit} class="flex flex-col gap-3 mt-2">
-			<label class="flex flex-col gap-1">
-				<span class="text-sm font-medium">Description</span>
-				<input
+			<div class="flex flex-col gap-1">
+				<Label for="meal-description">Description</Label>
+				<Input
+					id="meal-description"
 					type="text"
 					bind:value={description}
-					class="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					placeholder="e.g. Chicken breast with rice"
 				/>
 				{#if errors.description}<span class="text-xs text-destructive">{errors.description}</span>{/if}
-			</label>
+			</div>
 
-			<label class="flex flex-col gap-1">
-				<span class="text-sm font-medium">Calories</span>
-				<input
+			<div class="flex flex-col gap-1">
+				<Label for="meal-calories">Calories</Label>
+				<Input
+					id="meal-calories"
 					type="number"
 					bind:value={calories}
 					min="0"
-					class="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					placeholder="500"
 				/>
 				{#if errors.calories}<span class="text-xs text-destructive">{errors.calories}</span>{/if}
-			</label>
+			</div>
 
 			<div class="grid grid-cols-3 gap-2">
-				<label class="flex flex-col gap-1">
-					<span class="text-sm font-medium">Protein (g)</span>
-					<input
+				<div class="flex flex-col gap-1">
+					<Label for="meal-protein">Protein (g)</Label>
+					<Input
+						id="meal-protein"
 						type="number"
 						bind:value={protein}
 						min="0"
-						class="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					/>
 					{#if errors.protein}<span class="text-xs text-destructive">{errors.protein}</span>{/if}
-				</label>
+				</div>
 
-				<label class="flex flex-col gap-1">
-					<span class="text-sm font-medium">Carbs (g)</span>
-					<input
+				<div class="flex flex-col gap-1">
+					<Label for="meal-carbs">Carbs (g)</Label>
+					<Input
+						id="meal-carbs"
 						type="number"
 						bind:value={carbs}
 						min="0"
-						class="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					/>
 					{#if errors.carbs}<span class="text-xs text-destructive">{errors.carbs}</span>{/if}
-				</label>
+				</div>
 
-				<label class="flex flex-col gap-1">
-					<span class="text-sm font-medium">Fat (g)</span>
-					<input
+				<div class="flex flex-col gap-1">
+					<Label for="meal-fat">Fat (g)</Label>
+					<Input
+						id="meal-fat"
 						type="number"
 						bind:value={fat}
 						min="0"
-						class="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					/>
 					{#if errors.fat}<span class="text-xs text-destructive">{errors.fat}</span>{/if}
-				</label>
+				</div>
 			</div>
 
-			<label class="flex flex-col gap-1">
-				<span class="text-sm font-medium">Date</span>
-				<input
+			<div class="flex flex-col gap-1">
+				<Label for="meal-date">Date</Label>
+				<Input
+					id="meal-date"
 					type="text"
 					bind:value={dateInput}
-					class="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					placeholder="YYYY-MM-DD"
 				/>
 				{#if errors.date}<span class="text-xs text-destructive">{errors.date}</span>{/if}
-			</label>
+			</div>
 
 			<div class="flex gap-2 mt-2">
 				<Button type="button" variant="outline" onclick={handleClose} class="flex-1">Cancel</Button>

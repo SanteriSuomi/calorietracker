@@ -1,188 +1,154 @@
-## Project Configuration
-
-- **Language**: TypeScript
-- **Package Manager**: pnpm
-- **Add-ons**: tailwindcss, drizzle, better-auth, vitest, sveltekit-adapter, biome
-
----
-
 # AGENTS.md
 
-AI agent context file for the CalorieTracker project. **Keep this file up-to-date** — when you add, remove, or significantly change files, modules, patterns, or conventions, update the relevant section below. Accuracy here saves context in future sessions.
+AI agent context for the CalorieTracker project. **Keep this file up-to-date** — when adding, removing, or significantly changing modules, patterns, or conventions during implementation, update the relevant section below.
+
+## Context Management
+
+- **Explore agent** (`subagent_type: explore`) — codebase navigation, finding files, understanding architecture. Use for any non-trivial task to avoid consuming main context with discovery work.
+- **Researcher agent** (`subagent_type: researcher`) — web searches, documentation lookups, API references. Use frequently during planning to verify library APIs, check best practices, and read framework docs before writing code.
+
+Only run grep/glob/websearch directly in main context when results are trivial (single file lookup, known path) or needed immediately for an in-progress decision.
 
 ## Project Overview
 
-CalorieTracker is a mobile-first web app for tracking daily calorie and macro intake. Users can manually log meals, or use AI (text description and/or photo) to estimate nutrition.
+Mobile-first web app for tracking daily calorie and macro intake. Users log meals manually or via AI (text/photo). Current progress: steps 0-6 done (auth, logging, day view, manual meal CRUD). Step 7 (AI integration) in progress. See `docs/PLAN.md` for full roadmap.
 
 ## Tech Stack
 
-- **Frontend**: SvelteKit 2 + Svelte 5 (runes: `$state`, `$derived`, `$effect`, `$props`)
-- **Styling**: Tailwind CSS + shadcn-svelte
+- **Frontend**: SvelteKit 2 + Svelte 5 (runes only — `svelte.config.js` forces `runes: true` globally)
+- **Styling**: Tailwind CSS + shadcn-svelte (vega style, lucide icons)
 - **Charts**: Chart.js (doughnut) via direct Svelte 5 `$effect` integration
-- **Backend**: SvelteKit server routes (API routes in `src/routes/api/`)
-- **Database**: Dual-provider via Drizzle ORM:
-  - Azure: PostgreSQL Flexible Server
-  - Self-hosted: libsql (encrypted SQLite)
-- **Auth**: BetterAuth (`better-auth`) — email/password + optional Google OAuth
-- **AI**: Vercel AI SDK (`ai` + `@ai-sdk/openai`) with user-configured OpenAI-compatible endpoint
+- **Backend**: SvelteKit server routes (`src/routes/api/`)
+- **Database**: Dual-provider via Drizzle ORM — `DATABASE_PROVIDER` env var selects adapter:
+  - `libsql` (default) → local encrypted SQLite
+  - `pg` → PostgreSQL Flexible Server (Azure)
+- **Auth**: BetterAuth — email/password (Google OAuth deferred)
+- **AI**: Vercel AI SDK (`ai` + `@ai-sdk/openai`) — not yet implemented
 - **Logging**: Pino — structured JSON, wide-event pattern, `info` and `error` levels only
-- **Encryption**:
-  - Database: libsql `encryptionKey` (self-hosted) / TLS + Azure-managed encryption (Azure)
-  - Images: AES-256-GCM per-user (self-hosted) / Azure Blob Storage encryption (Azure)
-- **CI/CD**: Azure DevOps Pipelines
-- **Deploy**: Azure Container Apps (consumption, scale-to-zero) + self-hosted server (parallel stage)
-- **IaC**: Bicep (idempotent, Azure-native)
+- **Package manager**: pnpm
 
 ## Project Structure
 
 ```
-src/lib/server/       # Server-only code (auth, db, constants)
-src/lib/components/   # Shared Svelte components
+src/lib/server/       # Server-only code (auth, db, constants, logger)
+src/lib/components/   # Shared Svelte components (ui/ is shadcn-svelte generated)
 src/routes/           # SvelteKit routes (pages + API endpoints)
-src/hooks.server.ts   # Logging middleware + auth middleware (session extraction + route guards)
+src/hooks.server.ts   # Logging + auth middleware (session extraction + route guards)
 tests/                # Vitest unit & integration tests
-infra/                # Bicep IaC templates
-docs/                 # PLAN.md, stage logs, schema docs
-data/                 # Runtime data (gitignored)
+docs/                 # PLAN.md, step plans, stage logs, schema docs
+scripts/              # seed-dev.ts, pm2-dev.mjs
 ```
 
-Key entry points: `src/lib/server/auth.ts` (BetterAuth config), `src/lib/auth-client.ts` (client-side auth), `src/lib/server/constants.ts` (route constants), `src/lib/server/db/` (dual-provider DB with Drizzle).
+Key entry points: `src/lib/server/auth.ts` (BetterAuth), `src/lib/auth-client.ts` (client auth), `src/lib/server/constants.ts` (route constants), `src/lib/server/db/index.ts` (dual-provider DB via top-level await dynamic import).
 
-## Documentation
+## Commands
 
-- `docs/PLAN.md` — Living implementation plan with step checklist and design specs
-- `docs/plans/` — Detailed implementation plans written **before** coding each step (e.g., `STEP4_LOGGING.md`, `STEP5_DAY_VIEW.md`). These document file specs, implementation order, risks, and success criteria. Updated if scope changes during implementation.
-- `docs/stages/` — Implementation logs written **after** completing each step (STAGE0..STAGE3+). Record what was done, verification results, files created/modified/deleted, and design decisions.
-- `docs/agents/` — Agent-oriented reference docs (e.g., `pm2.md` for dev server process management)
-- `docs/` — Schema, architecture, design docs, and transition logs
-
-## Code Conventions
-
-- Svelte 5 runes only (no `$:` reactive syntax)
-- Explicit named imports, no wildcards or barrel files
-- Case-sensitive paths always
-- Strict TypeScript, types reflect reality (`?` for optional, `| null` for nullable)
-- **Validation must be done on both frontend and backend.** Client-side validation provides immediate feedback; server-side validation is the source of truth. Never rely on client-only validation.
-- Audit fields on all custom tables: `createdAt, createdBy, updatedAt, updatedBy` (via `auditColumns()` helper spread into table definitions)
-- Comments only for exotic functions, workarounds, complex algorithms
-- Logging: one wide event per request, emitted in `finally`, structured JSON via Pino. Handlers use `addLogContext()` from `$lib/server/logger` to add business context; the middleware emits the event automatically.
-- Two levels only: `logger.info()` and `logger.error()`, controlled by `LOG_LEVEL` env var (`verbose`/`info`/`error`/`none`, default `info`)
-
-## Linting & Formatting
-
-- **Tool**: Biome (`@biomejs/biome`) — replaces Prettier + ESLint
-- **Config**: `biome.json` at project root
-- **Commands**: `pnpm lint` (check only), `pnpm format` (check + fix)
-- **Svelte support**: experimental (`html.experimentalFullSupportEnabled: true`)
-- **Svelte overrides**: `noUnusedVariables`, `noUnusedImports`, `useConst`, `useImportType` disabled for `.svelte` files (false positives until cross-language support lands)
-- **Tailwind**: `css.parser.tailwindDirectives: true` (replaces `prettier-plugin-tailwindcss`)
-- **Known issue**: Biome's Svelte formatter may produce incorrect indentation in `<script>` blocks — review manually after bulk reformatting
-
-## Database Provider Switching
-
-`DATABASE_PROVIDER` env var selects the adapter:
-
-- `libsql` → Drizzle libsql driver, local file, `ENCRYPTION_KEY` for encryption at rest
-- `pg` → Drizzle postgres driver, Azure PostgreSQL Flexible Server
-
-Separate schema files per dialect (`sqlite/schema.ts` uses `sqliteTable`, `pg/schema.ts` uses `pgTable`). Both must be kept in sync. `index.ts` uses top-level await with dynamic import to load only the active provider's driver.
-
-Drizzle configs: `drizzle.config.ts` (SQLite, default), `drizzle-pg.config.ts` (PG). Migration output goes to `drizzle/sqlite/` and `drizzle/pg/` respectively.
-
-## Dev Seed
-
-`pnpm seed:dev` creates a test user for local development (libsql only):
-
-- **Email:** `test@gmail.com`
-- **Password:** `Password1`
-
-Requires `DEV_SEED=true` in `.env` — script exits silently otherwise. Idempotent — skips if user already exists.
-
-## Auth Middleware
-
-`hooks.server.ts` uses `sequence(handleLogging, handleBetterAuth, handleAuthGuard)`:
-
-1. **handleLogging** (outermost): generates `requestId`, initializes `logContext`, emits one wide event per request in `finally` with `method, path, requestId, userId, statusCode, duration_ms, outcome, detail` + any `logContext` fields. Handlers add context via `addLogContext(locals, data)` from `$lib/server/logger`.
-	2. **handleBetterAuth**: `auth.api.getSession()` extracts session into `event.locals`, then `svelteKitHandler` processes BetterAuth internal routes (`/api/auth/*`)
-	3. **handleAuthGuard**: enforces auth on all other routes:
-   - `/api/auth/*` → pass through (BetterAuth needs its own endpoints unauthenticated)
-   - `/api/*` without session → 401 JSON
-   - Page routes without session → 302 redirect to `/auth`
-   - `/auth` with session → 302 redirect to `/`
-   - Skips all checks during `building` (static build)
-
-Route paths are defined in `src/lib/server/constants.ts`: `API_BASE`, `AUTH_API_ROUTE`, `AUTH_PAGE_ROUTE`, `API_VERSION`.
-
-## Auth Client
-
-`src/lib/auth-client.ts` exports `authClient` (for API calls like `signOut()`) and `useSession` (nanostore Atom for reactive session state). Uses `createAuthClient` from `better-auth/svelte`. Sign-out uses `authClient.signOut()` + `window.location.href` to force a full page reload.
-
-## Auth Page
-
-`/auth` is a single page with client-side toggle between sign-in and sign-up modes. Form actions `?/signIn` and `?/signUp` call BetterAuth server API. Error messages displayed via `form.message`. Google OAuth is deferred to a future step.
-
-## AI Integration
-
-- User configures endpoint URL, model, API key in Settings (stored in `userSettings` table)
-- Vercel AI SDK `createOpenAI({ baseURL, apiKey })` creates provider per-request
-- System prompt instructs structured JSON: `{description, calories, protein, carbs, fat}`
-- Vision: images sent as base64 content blocks
-- Source tracked: `"manual" | "ai_text" | "ai_vision" | "ai_text_vision"`
-
-## Key Environment Variables
-
-```
-ORIGIN=                    # Public URL of the app (used by BetterAuth baseURL)
-BETTER_AUTH_SECRET=       # >=32 chars, high entropy
-ENCRYPTION_SECRET=        # For DB encryption + file key derivation
-DATABASE_PROVIDER=libsql  # or pg
-DATABASE_URL=             # Connection string
-ENCRYPTION_KEY=           # libsql encryption key (self-hosted only)
-LOG_LEVEL=info            # verbose|info|error|none — controls Pino log level
-AZURE_BLOB_CONNECTION_STRING=  # Azure deployment only
-GOOGLE_CLIENT_ID=            # Optional (deferred)
-GOOGLE_CLIENT_SECRET=        # Optional (deferred)
+```bash
+pnpm dev                # Vite dev server
+pnpm build              # Production build
+pnpm check              # svelte-check type checking
+pnpm lint               # Biome check (no fix)
+pnpm format             # Biome check --write (fix)
+pnpm test               # All tests (non-watch)
+pnpm test:unit          # All tests (watch mode)
+pnpm db:push            # Push SQLite schema to DB
+pnpm db:push:pg         # Push PG schema to DB
+pnpm db:generate        # Generate SQLite migration
+pnpm db:generate:pg     # Generate PG migration
+pnpm auth:schema        # Regenerate BetterAuth schema
+pnpm seed:dev           # Create test user (libsql only)
 ```
 
 ## Testing
 
-After changes, run in order (fail fast):
+Two Vitest projects configured in `vite.config.ts`:
 
-1. Type check → 2. Lint → 3. Unit tests → 4. Integration tests
+| Project | Environment | File pattern |
+|---------|------------|-------------|
+| `client` | Browser (Playwright/Chromium) | `src/**/*.svelte.{test,spec}.{js,ts}` |
+| `server` | Node | `src/**/*.{test,spec}.{js,ts}`, `tests/**/*.{test,spec}.{js,ts}` |
 
-**Browser verification is mandatory for any change that affects UI** — components, pages, routes with rendered output, styling, layout, or client-side interactivity. Use the `browser-automation` skill with a running dev server (see "Dev Server & Browser Verification" section). This applies to:
+Client tests exclude `src/lib/server/**`. Both projects exclude each other's file patterns.
 
-- New or modified Svelte components (`.svelte` files)
-- Route pages (`+page.svelte`, `+page.server.ts` load functions)
-- CSS/Tailwind changes that affect visual output
-- Client-side state changes, form handling, navigation flows
-- shadcn-svelte component additions or modifications
+**Verification order (fail fast):** typecheck → lint → tests
 
-Do NOT skip browser verification for UI changes. Passing typecheck + lint + tests is not sufficient — the sheet component bug (children not passed to Dialog.Root) and `invalidate()` not triggering re-fetch were only caught by browser testing.
+**Browser verification is mandatory for UI changes.** Passing typecheck + lint + tests is not sufficient — real bugs (e.g., sheet children not passed to Dialog.Root, `invalidate()` not triggering re-fetch) were only caught by browser testing. Use the `browser-automation` skill with a running dev server.
 
-## Dev Server (pm2)
+## Code Conventions
 
-Use pm2 when testing the running server (e.g., verifying logs, auth flows). Full guide: `docs/agents/pm2.md`.
+- Svelte 5 runes only (no `$:` reactive syntax). Forced globally in `svelte.config.js` except for `node_modules`.
+- Explicit named imports, no wildcards or barrel files
+- Strict TypeScript — `?` for optional, `| null` for nullable
+- **Validation on both frontend and backend.** Server-side is the source of truth.
+- Audit fields on all custom tables: `createdAt, createdBy, updatedAt, updatedBy` via `auditColumns()` helper
+- Comments only for exotic functions, workarounds, complex algorithms
+- Logging: one wide event per request in `finally`, `addLogContext(locals, data)` from `$lib/server/logger` to add business context
+- Two log levels: `logger.info()` and `logger.error()`, controlled by `LOG_LEVEL` env var (`verbose`/`info`/`error`/`none`)
+
+## Linting & Formatting
+
+Biome (`@biomejs/biome`) — replaces Prettier + ESLint. Config: `biome.json`.
+
+- **Style**: tabs, single quotes, no trailing commas, semicolons always
+- **Svelte**: experimental full support (`html.experimentalFullSupportEnabled: true`)
+- **Svelte overrides**: `noUnusedVariables`, `noUnusedImports`, `useConst`, `useImportType` disabled for `.svelte` files (false positives)
+- **shadcn-svelte** (`src/lib/components/ui/**`): a11y rule `useValidAriaRole` disabled
+- **Known issue**: Biome may produce incorrect `<script>` block indentation — review manually after bulk reformatting
+
+## Database
+
+`DATABASE_PROVIDER` env var selects the adapter (defaults to `libsql`). Separate schema files per dialect: `sqlite/schema.ts` (`sqliteTable`) and `pg/schema.ts` (`pgTable`). Both must stay in sync.
+
+Drizzle configs: `drizzle.config.ts` (SQLite), `drizzle-pg.config.ts` (PG). Migrations output to `drizzle/sqlite/` and `drizzle/pg/`.
+
+## Auth
+
+**Middleware** (`hooks.server.ts`): `sequence(handleLogging, handleBetterAuth, handleAuthGuard)`:
+1. `handleLogging` — generates `requestId`, emits one wide event per request in `finally`
+2. `handleBetterAuth` — `auth.api.getSession()` extracts session into `event.locals`, then `svelteKitHandler` processes `/api/auth/*`
+3. `handleAuthGuard` — `/api/auth/*` passes through; `/api/*` without session → 401 JSON; page routes without session → 302 to `/auth`; `/auth` with session → 302 to `/`
+
+Route paths: `src/lib/server/constants.ts` (`API_BASE`, `AUTH_API_ROUTE`, `AUTH_PAGE_ROUTE`).
+
+**Client**: `src/lib/auth-client.ts` exports `authClient` (API calls) and `useSession` (reactive session state). Sign-out forces full page reload.
+
+## Dev Seed
+
+`pnpm seed:dev` creates test user (libsql only): `test@gmail.com` / `Password1`. Requires `DEV_SEED=true` in `.env`. Idempotent.
+
+## Environment Variables
 
 ```bash
-npx pm2 start scripts/pm2-dev.mjs --name calorietracker  # start
-npx pm2 logs calorietracker --lines 20 --nostream        # view logs
-npx pm2 stop calorietracker && npx pm2 delete calorietracker  # clean up
+DATABASE_URL=file:local.db    # Connection string
+ORIGIN=                       # Public URL (BetterAuth baseURL)
+BETTER_AUTH_SECRET=           # >=32 chars, high entropy
+# DEV_SEED=true               # Enable seed script
+# LOG_LEVEL=info              # verbose|info|error|none
+# DATABASE_PROVIDER=libsql    # or pg
 ```
+
+Additional vars for future steps: `ENCRYPTION_SECRET`, `ENCRYPTION_KEY`, `AZURE_BLOB_CONNECTION_STRING`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
 ## Dev Server & Browser Verification
 
-The bash tool runs commands synchronously — a long-running process like `pnpm run dev` blocks the session until timeout, then gets killed. Backgrounding (`&`, `nohup`) does not help; the process dies when the bash session ends.
+The bash tool runs synchronously — `pnpm run dev` blocks until timeout. Use a general Task agent to start the dev server (stays alive while agent runs), then run browser commands in the main session. No explicit teardown needed.
 
-**Pattern:** Use a general Task agent to start the dev server (it stays alive as long as the agent runs), then run `agent-browser` commands in the main session to verify the UI. The dev server dies when the Task agent completes or the session ends — no cleanup needed.
+For persistent server (e.g., testing auth flows, verifying logs), use pm2 — see `docs/agents/pm2.md`:
+```bash
+npx pm2 start scripts/pm2-dev.mjs --name calorietracker
+npx pm2 logs calorietracker --lines 20 --nostream
+npx pm2 stop calorietracker && npx pm2 delete calorietracker
+```
 
-**Steps:**
-1. Task agent: `pnpm run dev` in the project directory (stays running)
-2. Main session: `agent-browser` commands against `http://localhost:5173` (or whichever port Vite picks)
-3. Done — no explicit teardown needed
+## Documentation
+
+- `docs/PLAN.md` — Living implementation plan with step checklist
+- `docs/plans/` — Detailed plans written **before** coding each step
+- `docs/stages/` — Implementation logs written **after** completing each step
+- `docs/SCHEMA.md` — Database schema reference
 
 ## Commit Conventions
 
-- One commit per session — amend the existing commit as work progresses
+- One commit per session — amend as work progresses
 - Only commit and push when explicitly asked
 - Imperative form ("Add feature" not "Added feature")

@@ -254,7 +254,7 @@ GOOGLE_CLIENT_SECRET=        # Optional
 - [x] 4. Logging — Pino singleton, request logging middleware in hooks
 - [x] 5. Main day view — CalorieDoughnut (Chart.js), DateNav, empty MealList
 - [x] 6. Manual meal CRUD — ManualEntrySheet, API routes, DB operations
-- [ ] 7. AI integration — Settings page, Vercel AI SDK provider, analyze endpoint, AiInputBar
+- [x] 7. AI integration — Settings page, Vercel AI SDK provider, analyze endpoint, AiInputBar
 - [ ] 8. Image handling — Upload, encrypt/decrypt (dual storage), serve with auth check
 - [ ] 9. Calendar view — Month grid + list tabs, navigate to day
 - [ ] 10. Docker + local dev — Dockerfile, docker-compose
