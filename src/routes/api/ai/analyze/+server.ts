@@ -1,12 +1,12 @@
+import { createOpenAI } from '@ai-sdk/openai';
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import { generateText, NoObjectGeneratedError, Output } from 'ai';
+import { eq } from 'drizzle-orm';
+import { z } from 'zod';
 import { db } from '$lib/server/db';
 import { userSettings } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
 import { addLogContext } from '$lib/server/logger';
-import { createOpenAI } from '@ai-sdk/openai';
-import { generateText, Output, NoObjectGeneratedError } from 'ai';
-import { z } from 'zod';
+import type { RequestHandler } from './$types';
 
 const SYSTEM_PROMPT =
 	'You are a nutrition estimation assistant. Given a food description, estimate the nutritional content for a typical serving. Return a JSON object with: description (cleaned-up food name), calories (kcal), protein (grams), carbs (grams), fat (grams). All numeric values must be non-negative integers. If the input is ambiguous, estimate for a standard portion.';
@@ -76,7 +76,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json(output);
 	} catch (error) {
 		if (NoObjectGeneratedError.isInstance(error)) {
-			addLogContext(locals, { aiSource: 'ai_text', aiModel: settings.aiModel, error: 'invalid_response' });
+			addLogContext(locals, {
+				aiSource: 'ai_text',
+				aiModel: settings.aiModel,
+				error: 'invalid_response'
+			});
 			return json({ error: 'AI returned invalid response' }, { status: 502 });
 		}
 

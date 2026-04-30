@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('ai', () => ({
 	generateText: vi.fn(),
@@ -52,7 +52,7 @@ describe('AI analyze — generateText mock', () => {
 			fat: 8
 		};
 
-		mockGenerateText.mockResolvedValueOnce({ output: expectedResult });
+		mockGenerateText.mockResolvedValueOnce({ output: expectedResult } as never);
 
 		const result = await mockGenerateText({
 			model: 'mocked-model' as never,

@@ -1,10 +1,11 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import { and, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { meal } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
 import { addLogContext } from '$lib/server/logger';
+import { storage } from '$lib/server/storage';
 import { isValidDate, today } from '$lib/utils/date';
+import type { RequestHandler } from './$types';
 
 interface UpdateBody {
 	description?: unknown;
@@ -13,6 +14,7 @@ interface UpdateBody {
 	carbs?: unknown;
 	fat?: unknown;
 	date?: unknown;
+	imageFilename?: unknown;
 }
 
 async function getOwnedMeal(id: string, userId: string) {
@@ -40,11 +42,7 @@ export const PUT: RequestHandler = async ({ request, params, locals }) => {
 		return json({ error: 'Invalid JSON' }, { status: 400 });
 	}
 
-	if (
-		typeof body !== 'object' ||
-		body === null ||
-		Array.isArray(body)
-	) {
+	if (typeof body !== 'object' || body === null || Array.isArray(body)) {
 		return json({ error: 'Invalid JSON' }, { status: 400 });
 	}
 
@@ -101,6 +99,20 @@ export const PUT: RequestHandler = async ({ request, params, locals }) => {
 		update.date = parsed.date;
 	}
 
+	if (parsed.imageFilename !== undefined) {
+		if (parsed.imageFilename !== null && typeof parsed.imageFilename !== 'string') {
+			return json({ error: 'imageFilename must be a string or null' }, { status: 400 });
+		}
+		if (existing.imageFilename && existing.imageFilename !== parsed.imageFilename) {
+			try {
+				await storage.remove(user.id, existing.imageFilename);
+			} catch {
+				/* log only */
+			}
+		}
+		update.imageFilename = parsed.imageFilename;
+	}
+
 	if (Object.keys(update).length === 0) {
 		return json({ error: 'No fields to update' }, { status: 400 });
 	}
@@ -108,11 +120,7 @@ export const PUT: RequestHandler = async ({ request, params, locals }) => {
 	update.updatedAt = new Date();
 	update.updatedBy = user.id;
 
-	const updated = await db
-		.update(meal)
-		.set(update)
-		.where(eq(meal.id, params.id))
-		.returning();
+	const updated = await db.update(meal).set(update).where(eq(meal.id, params.id)).returning();
 
 	const mealRow = updated[0];
 
@@ -130,9 +138,15 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 		return json({ error: 'Meal not found' }, { status: 404 });
 	}
 
-	await db
-		.delete(meal)
-		.where(eq(meal.id, params.id));
+	if (existing.imageFilename) {
+		try {
+			await storage.remove(user.id, existing.imageFilename);
+		} catch {
+			/* log only */
+		}
+	}
+
+	await db.delete(meal).where(eq(meal.id, params.id));
 
 	addLogContext(locals, { mealId: params.id });
 

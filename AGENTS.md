@@ -129,16 +129,44 @@ BETTER_AUTH_SECRET=           # >=32 chars, high entropy
 
 Additional vars for future steps: `ENCRYPTION_SECRET`, `ENCRYPTION_KEY`, `AZURE_BLOB_CONNECTION_STRING`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
+## Git Worktrees
+
+`.env` is gitignored and NOT copied when creating a worktree. After creating a new worktree:
+
+```bash
+cp ../CalorieTracker/.env .env   # copy from main worktree
+npx drizzle-kit push --force     # create local DB
+```
+
+If the DB driver fails with `DATABASE_URL is not set`, the `.env` is missing.
+
 ## Dev Server & Browser Verification
 
-The bash tool runs synchronously — `pnpm run dev` blocks until timeout. Use a general Task agent to start the dev server (stays alive while agent runs), then run browser commands in the main session. No explicit teardown needed.
+Use **pm2** to run the dev server — not Task agents (which block on the long-running process).
 
-For persistent server (e.g., testing auth flows, verifying logs), use pm2 — see `docs/agents/pm2.md`:
 ```bash
 npx pm2 start scripts/pm2-dev.mjs --name calorietracker
-npx pm2 logs calorietracker --lines 20 --nostream
-npx pm2 stop calorietracker && npx pm2 delete calorietracker
 ```
+
+Then use `agent-browser` against the port shown in `npx pm2 logs calorietracker --lines 5 --nostream`.
+
+### agent-browser on Windows (v0.26.0)
+
+Known issues: `open` hangs intermittently (#1270, #1308), `upload` on hidden inputs kills CDP (#1102), orphan Chrome processes accumulate (#1263).
+
+**Proactive cleanup before browser sessions:**
+
+```bash
+agent-browser close --all 2>/dev/null
+taskkill //F //IM chrome.exe 2>/dev/null
+taskkill //F //IM agent-browser-win32-x64.exe 2>/dev/null
+```
+
+**Avoid `batch` for complex workflows** — use individual commands instead. The `batch` command can hang when chaining too many operations.
+
+**Hidden file inputs:** Do NOT use `upload` on `display:none` inputs. Use `eval` to make the input visible first, then upload, or set files entirely via JavaScript.
+
+**Recovery:** If `open` hangs, kill all Chrome/daemon processes and retry.
 
 ## Documentation
 

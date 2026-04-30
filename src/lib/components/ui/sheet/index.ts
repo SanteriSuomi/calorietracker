@@ -1,8 +1,8 @@
+import Root from './sheet.svelte';
 import Close from './sheet-close.svelte';
 import Content from './sheet-content.svelte';
 import Description from './sheet-description.svelte';
 import Overlay from './sheet-overlay.svelte';
-import Root from './sheet.svelte';
 import Title from './sheet-title.svelte';
 
 export {

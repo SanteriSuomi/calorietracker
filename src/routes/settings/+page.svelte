@@ -1,76 +1,76 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { Separator } from '$lib/components/ui/separator';
-	import { invalidateAll } from '$app/navigation';
-	import { authClient } from '$lib/auth-client';
 	import { ArrowLeft } from '@lucide/svelte';
-	import type { PageData } from './$types';
-
-	let { data }: { data: PageData } = $props();
-
-	let dailyCalorieGoal = $state(data.dailyCalorieGoal.toString());
-	let aiEndpointUrl = $state(data.aiEndpointUrl);
-	let aiApiKey = $state(data.aiApiKey);
-	let aiModel = $state(data.aiModel);
-	let saving = $state(false);
-	let errors = $state<Record<string, string>>({});
-	let success = $state(false);
-
-	function validate(): Record<string, string> {
-		const errs: Record<string, string> = {};
-		const goal = Number.parseInt(dailyCalorieGoal, 10);
-		if (dailyCalorieGoal === '' || !Number.isInteger(goal) || goal < 0) {
-			errs.dailyCalorieGoal = 'Must be a non-negative integer';
+		import { invalidateAll } from '$app/navigation';
+		import { authClient } from '$lib/auth-client';
+		import { Button } from '$lib/components/ui/button';
+		import { Input } from '$lib/components/ui/input';
+		import { Label } from '$lib/components/ui/label';
+		import { Separator } from '$lib/components/ui/separator';
+		import type { PageData } from './$types';
+	
+		let { data }: { data: PageData } = $props();
+	
+		let dailyCalorieGoal = $state(data.dailyCalorieGoal.toString());
+		let aiEndpointUrl = $state(data.aiEndpointUrl);
+		let aiApiKey = $state(data.aiApiKey);
+		let aiModel = $state(data.aiModel);
+		let saving = $state(false);
+		let errors = $state<Record<string, string>>({});
+		let success = $state(false);
+	
+		function validate(): Record<string, string> {
+			const errs: Record<string, string> = {};
+			const goal = Number.parseInt(dailyCalorieGoal, 10);
+			if (dailyCalorieGoal === '' || !Number.isInteger(goal) || goal < 0) {
+				errs.dailyCalorieGoal = 'Must be a non-negative integer';
+			}
+			if (aiEndpointUrl && !/^https?:\/\/.+/.test(aiEndpointUrl)) {
+				errs.aiEndpointUrl = 'Must be a valid URL (http:// or https://)';
+			}
+			return errs;
 		}
-		if (aiEndpointUrl && !/^https?:\/\/.+/.test(aiEndpointUrl)) {
-			errs.aiEndpointUrl = 'Must be a valid URL (http:// or https://)';
-		}
-		return errs;
-	}
-
-	async function handleSave() {
-		errors = {};
-		success = false;
-		const errs = validate();
-		if (Object.keys(errs).length > 0) {
-			errors = errs;
-			return;
-		}
-
-		saving = true;
-		try {
-			const res = await fetch('/api/settings', {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					dailyCalorieGoal: Number.parseInt(dailyCalorieGoal, 10),
-					aiEndpointUrl: aiEndpointUrl || null,
-					aiApiKey: aiApiKey || null,
-					aiModel: aiModel || null
-				})
-			});
-
-			if (!res.ok) {
-				const err = await res.json();
-				errors.form = err.error || 'Failed to save settings';
+	
+		async function handleSave() {
+			errors = {};
+			success = false;
+			const errs = validate();
+			if (Object.keys(errs).length > 0) {
+				errors = errs;
 				return;
 			}
-
-			success = true;
-			await invalidateAll();
-		} catch {
-			errors.form = 'Network error';
-		} finally {
-			saving = false;
+	
+			saving = true;
+			try {
+				const res = await fetch('/api/settings', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						dailyCalorieGoal: Number.parseInt(dailyCalorieGoal, 10),
+						aiEndpointUrl: aiEndpointUrl || null,
+						aiApiKey: aiApiKey || null,
+						aiModel: aiModel || null
+					})
+				});
+	
+				if (!res.ok) {
+					const err = await res.json();
+					errors.form = err.error || 'Failed to save settings';
+					return;
+				}
+	
+				success = true;
+				await invalidateAll();
+			} catch {
+				errors.form = 'Network error';
+			} finally {
+				saving = false;
+			}
 		}
-	}
-
-	async function handleSignOut() {
-		await authClient.signOut();
-		window.location.href = '/';
-	}
+	
+		async function handleSignOut() {
+			await authClient.signOut();
+			window.location.href = '/';
+		}
 </script>
 
 <svelte:head>

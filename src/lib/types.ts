@@ -6,6 +6,7 @@ export interface Meal {
 	carbs: number;
 	fat: number;
 	source: string;
+	imageFilename?: string | null;
 }
 
 export interface MealFormData {

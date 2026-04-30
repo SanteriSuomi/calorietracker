@@ -1,20 +1,20 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-		import { Button } from '$lib/components/ui/button';
-		import { addDays, formatDate, today } from '$lib/utils/date';
-
-		let { date }: { date: string } = $props();
-
-		function prevDay() {
-			goto(`?date=${addDays(date, -1)}`);
-		}
-
-		function nextDay() {
-			const next = addDays(date, 1);
-			if (next <= today()) {
-				goto(`?date=${next}`);
+			import { Button } from '$lib/components/ui/button';
+			import { addDays, formatDate, today } from '$lib/utils/date';
+	
+			let { date }: { date: string } = $props();
+	
+			function prevDay() {
+				goto(`?date=${addDays(date, -1)}`);
 			}
-		}
+	
+			function nextDay() {
+				const next = addDays(date, 1);
+				if (next <= today()) {
+					goto(`?date=${next}`);
+				}
+			}
 </script>
 
 <div class="flex items-center justify-between py-2">

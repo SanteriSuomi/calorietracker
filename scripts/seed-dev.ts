@@ -1,7 +1,7 @@
-import { hashPassword } from 'better-auth/crypto';
 import { createClient } from '@libsql/client';
-import { drizzle } from 'drizzle-orm/libsql';
+import { hashPassword } from 'better-auth/crypto';
 import { eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/libsql';
 import * as schema from '../src/lib/server/db/sqlite/schema';
 
 const DEV_EMAIL = 'test@gmail.com';

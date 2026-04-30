@@ -1,16 +1,16 @@
 <script lang="ts">
 	import './layout.css';
-
-	import favicon from '$lib/assets/favicon.svg';
-	import { authClient } from '$lib/auth-client';
-	import { Settings } from '@lucide/svelte';
-
-	let { children, data } = $props();
 	
-		async function handleSignOut() {
-			await authClient.signOut();
-			window.location.href = '/';
-		}
+		import { Settings } from '@lucide/svelte';
+		import favicon from '$lib/assets/favicon.svg';
+		import { authClient } from '$lib/auth-client';
+	
+		let { children, data } = $props();
+		
+			async function handleSignOut() {
+				await authClient.signOut();
+				window.location.href = '/';
+			}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>

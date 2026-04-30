@@ -1,10 +1,10 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { userSettings } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
-import { addLogContext } from '$lib/server/logger';
 import { DEFAULT_CALORIE_GOAL } from '$lib/server/db/shared/constants';
+import { addLogContext } from '$lib/server/logger';
+import type { RequestHandler } from './$types';
 
 const MASKED_KEY = 'sk-****';
 
@@ -109,12 +109,12 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 	const endpointUrl =
 		parsed.aiEndpointUrl === '' || parsed.aiEndpointUrl === null
 			? null
-			: (parsed.aiEndpointUrl as string | undefined) ?? null;
+			: ((parsed.aiEndpointUrl as string | undefined) ?? null);
 
 	const apiKeyRaw = parsed.aiApiKey;
 	const apiKey =
 		apiKeyRaw === MASKED_KEY
-			? existing[0]?.aiApiKey ?? null
+			? (existing[0]?.aiApiKey ?? null)
 			: apiKeyRaw === '' || apiKeyRaw === null
 				? null
 				: typeof apiKeyRaw === 'string'
@@ -124,7 +124,7 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 	const model =
 		parsed.aiModel === '' || parsed.aiModel === null
 			? null
-			: (parsed.aiModel as string | undefined) ?? null;
+			: ((parsed.aiModel as string | undefined) ?? null);
 
 	if (existing.length > 0) {
 		await db

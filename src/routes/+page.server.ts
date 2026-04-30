@@ -8,7 +8,13 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	const user = locals.user;
-	if (!user) return { meals: [] as Meal[], date: today(), dailyCalorieGoal: DEFAULT_CALORIE_GOAL, aiConfigured: false };
+	if (!user)
+		return {
+			meals: [] as Meal[],
+			date: today(),
+			dailyCalorieGoal: DEFAULT_CALORIE_GOAL,
+			aiConfigured: false
+		};
 
 	const raw = url.searchParams.get('date');
 	let date = raw && isValidDate(raw) ? raw : today();
@@ -23,7 +29,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 				protein: meal.protein,
 				carbs: meal.carbs,
 				fat: meal.fat,
-				source: meal.source
+				source: meal.source,
+				imageFilename: meal.imageFilename
 			})
 			.from(meal)
 			.where(and(eq(meal.userId, user.id), eq(meal.date, date))),
