@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-
-	let { form } = $props();
-
-	let mode = $state<'signin' | 'signup'>('signin');
+	
+		let { form } = $props();
+	
+		let mode = $state<'signin' | 'signup'>('signin');
 </script>
 
 <svelte:head>

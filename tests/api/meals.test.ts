@@ -1,9 +1,9 @@
-import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { createClient } from '@libsql/client';
+import { and, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import * as schema from '$lib/server/db/sqlite/schema';
-import { eq, and } from 'drizzle-orm';
 
 const client = createClient({ url: ':memory:' });
 const db = drizzle(client, { schema });
@@ -65,10 +65,7 @@ describe('POST /api/meals — validation', () => {
 			updatedAt: new Date()
 		});
 
-		const result = await db
-			.select()
-			.from(schema.meal)
-			.where(eq(schema.meal.id, mealId));
+		const result = await db.select().from(schema.meal).where(eq(schema.meal.id, mealId));
 
 		expect(result).toHaveLength(1);
 	});
@@ -81,10 +78,7 @@ describe('POST /api/meals — validation', () => {
 			updatedAt: new Date()
 		});
 
-		const result = await db
-			.select()
-			.from(schema.meal)
-			.where(eq(schema.meal.id, mealId));
+		const result = await db.select().from(schema.meal).where(eq(schema.meal.id, mealId));
 
 		expect(result).toHaveLength(1);
 	});
@@ -182,10 +176,7 @@ describe('PUT /api/meals/[id] — updates', () => {
 			.set({ description: 'Updated', updatedAt: new Date(), updatedBy: TEST_USER_ID })
 			.where(eq(schema.meal.id, mealId));
 
-		const [meal] = await db
-			.select()
-			.from(schema.meal)
-			.where(eq(schema.meal.id, mealId));
+		const [meal] = await db.select().from(schema.meal).where(eq(schema.meal.id, mealId));
 
 		expect(meal.description).toBe('Updated');
 		expect(meal.calories).toBe(400);
@@ -222,10 +213,7 @@ describe('PUT /api/meals/[id] — updates', () => {
 			.set({ calories: 250, updatedAt: new Date(), updatedBy: TEST_USER_ID })
 			.where(eq(schema.meal.id, mealId));
 
-		const [meal] = await db
-			.select()
-			.from(schema.meal)
-			.where(eq(schema.meal.id, mealId));
+		const [meal] = await db.select().from(schema.meal).where(eq(schema.meal.id, mealId));
 
 		expect(meal.updatedAt).toBeInstanceOf(Date);
 		expect(meal.updatedAt!.getTime()).toBeGreaterThan(beforeUpdate.getTime());
@@ -256,10 +244,7 @@ describe('DELETE /api/meals/[id] — deletion', () => {
 
 		await db.delete(schema.meal).where(eq(schema.meal.id, mealId));
 
-		const result = await db
-			.select()
-			.from(schema.meal)
-			.where(eq(schema.meal.id, mealId));
+		const result = await db.select().from(schema.meal).where(eq(schema.meal.id, mealId));
 
 		expect(result).toHaveLength(0);
 	});
@@ -291,10 +276,7 @@ describe('Meal ownership — ownership checks', () => {
 			.set({ description: 'Hacked', updatedAt: new Date(), updatedBy: TEST_USER_ID })
 			.where(and(eq(schema.meal.id, mealId), eq(schema.meal.userId, TEST_USER_ID)));
 
-		const [meal] = await db
-			.select()
-			.from(schema.meal)
-			.where(eq(schema.meal.id, mealId));
+		const [meal] = await db.select().from(schema.meal).where(eq(schema.meal.id, mealId));
 
 		expect(meal.description).toBe("User 2's Meal");
 	});
@@ -323,10 +305,7 @@ describe('Meal ownership — ownership checks', () => {
 			.delete(schema.meal)
 			.where(and(eq(schema.meal.id, mealId), eq(schema.meal.userId, TEST_USER_ID)));
 
-		const result = await db
-			.select()
-			.from(schema.meal)
-			.where(eq(schema.meal.id, mealId));
+		const result = await db.select().from(schema.meal).where(eq(schema.meal.id, mealId));
 
 		expect(result).toHaveLength(1);
 	});

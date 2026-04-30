@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Dialog } from 'bits-ui';
-	import { cn, type WithElementRef } from '$lib/utils';
-
-	let { class: className, ...restProps }: WithElementRef<Dialog.OverlayProps> = $props();
+		import { cn, type WithElementRef } from '$lib/utils';
+	
+		let { class: className, ...restProps }: WithElementRef<Dialog.OverlayProps> = $props();
 </script>
 
 <Dialog.Overlay
