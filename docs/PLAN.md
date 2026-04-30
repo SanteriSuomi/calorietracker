@@ -252,12 +252,13 @@ GOOGLE_CLIENT_SECRET=        # Optional
 - [x] 2. Database — Drizzle schema with audit fields, dual-provider setup, initial migration
 - [x] 3. Auth — BetterAuth config, hooks, sign-in/up page, middleware (Google OAuth deferred)
 - [x] 4. Logging — Pino singleton, request logging middleware in hooks
-- [ ] 5. Main day view — CalorieDoughnut (Chart.js), DateNav, empty MealList
-- [ ] 6. Manual meal CRUD — ManualEntrySheet, API routes, DB operations
+- [x] 5. Main day view — CalorieDoughnut (Chart.js), DateNav, empty MealList
+- [x] 6. Manual meal CRUD — ManualEntrySheet, API routes, DB operations
 - [ ] 7. AI integration — Settings page, Vercel AI SDK provider, analyze endpoint, AiInputBar
 - [ ] 8. Image handling — Upload, encrypt/decrypt (dual storage), serve with auth check
 - [ ] 9. Calendar view — Month grid + list tabs, navigate to day
 - [ ] 10. Docker + local dev — Dockerfile, docker-compose
 - [ ] 11. IaC — Bicep templates for Azure resources
 - [ ] 12. CI/CD — Azure DevOps pipeline (build, deploy Azure, deploy self-hosted)
-- [ ] 13. Polish — Edit/delete, loading states, error handling, PWA manifest
+- [ ] 13. Internationalization — i18n setup (e.g. `sveltekit-i18n` or `paraglide`), locale detection, extract all hardcoded strings to translation files, language switcher in Settings, start with English + one additional language
+- [ ] 14. Polish — Edit/delete, loading states, error handling, PWA manifest

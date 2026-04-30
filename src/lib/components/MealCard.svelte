@@ -1,26 +1,47 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge';
-		import * as Card from '$lib/components/ui/card';
+	import * as Card from '$lib/components/ui/card';
+	import { Pencil, Trash2 } from '@lucide/svelte';
 
-		let {
-			description,
-			calories,
-			protein,
-			carbs,
-			fat
-		}: {
-			description: string;
-			calories: number;
-			protein: number;
-			carbs: number;
-			fat: number;
-		} = $props();
+	let {
+		description,
+		calories,
+		protein,
+		carbs,
+		fat,
+		onEdit,
+		onDelete
+	}: {
+		description: string;
+		calories: number;
+		protein: number;
+		carbs: number;
+		fat: number;
+		onEdit?: () => void;
+		onDelete?: () => void;
+	} = $props();
+
+	function handleDelete() {
+		if (onDelete && confirm('Delete this meal?')) onDelete();
+	}
 </script>
 
 <Card.Content class="py-3 px-4">
 	<div class="flex items-center justify-between">
 		<span class="font-medium text-sm truncate mr-2">{description}</span>
-		<span class="font-semibold text-sm whitespace-nowrap">{calories}</span>
+		<div class="flex items-center gap-1">
+			<span class="font-semibold text-sm whitespace-nowrap">{calories}</span>
+			{#if onEdit}
+				<button onclick={onEdit} class="ml-1 p-1 rounded-sm opacity-50 hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity" aria-label="Edit meal">
+					<Pencil size={14} />
+				</button>
+			{/if}
+			{#if onDelete}
+				<button onclick={handleDelete} class="p-1 rounded-sm opacity-50 hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity" aria-label="Delete meal">
+					<Trash2 size={14} />
+				</button>
+			{/if}
+		</div>
 	</div>
 	<div class="flex gap-2 mt-1.5">
 		<Badge variant="secondary" class="text-xs">P: {protein}g</Badge>
