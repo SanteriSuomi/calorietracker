@@ -11,7 +11,7 @@ Only run grep/glob/websearch directly in main context when results are trivial (
 
 ## Project Overview
 
-Mobile-first web app for tracking daily calorie and macro intake. Users log meals manually or via AI (text/photo). Current progress: steps 0-6 done (auth, logging, day view, manual meal CRUD). Step 7 (AI integration) in progress. See `docs/PLAN.md` for full roadmap.
+Mobile-first web app for tracking daily calorie and macro intake. Users log meals manually or via AI (text/photo). Current progress: steps 0-9 done (auth, logging, day view, manual meal CRUD, AI, images, calendar view). Step 10 (Docker) in progress. See `docs/PLAN.md` for full roadmap.
 
 ## Tech Stack
 
@@ -39,7 +39,7 @@ docs/                 # PLAN.md, step plans, stage logs, schema docs
 scripts/              # seed-dev.ts, pm2-dev.mjs
 ```
 
-Key entry points: `src/lib/server/auth.ts` (BetterAuth), `src/lib/auth-client.ts` (client auth), `src/lib/server/constants.ts` (route constants), `src/lib/server/db/index.ts` (dual-provider DB via top-level await dynamic import).
+Key entry points: `src/lib/server/auth.ts` (BetterAuth), `src/lib/auth-client.ts` (client auth), `src/lib/server/constants.ts` (route constants), `src/lib/server/db/index.ts` (dual-provider DB via top-level await dynamic import), `src/lib/utils/date.ts` (YYYY-MM-DD string utilities).
 
 ## Commands
 

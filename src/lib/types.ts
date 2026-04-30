@@ -32,3 +32,11 @@ export interface UserSettings {
 	aiApiKey: string | null;
 	aiModel: string | null;
 }
+
+export interface DaySummary {
+	date: string;
+	calories: number;
+	protein: number;
+	carbs: number;
+	fat: number;
+}
