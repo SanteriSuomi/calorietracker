@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge';
 	
-				let { protein, carbs, fat }: { protein: number; carbs: number; fat: number } = $props();
+		
+					let { protein, carbs, fat }: { protein: number; carbs: number; fat: number } = $props();
 </script>
 
 <div class="flex justify-around py-2">

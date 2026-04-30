@@ -1,31 +1,32 @@
 <script lang="ts">
 	import { Pencil, Trash2 } from '@lucide/svelte';
-		import { Badge } from '$lib/components/ui/badge';
-		import * as Card from '$lib/components/ui/card';
+			import { Badge } from '$lib/components/ui/badge';
+			import * as Card from '$lib/components/ui/card';
 	
-		let {
-			description,
-			calories,
-			protein,
-			carbs,
-			fat,
-			imageFilename,
-			onEdit,
-			onDelete
-		}: {
-			description: string;
-			calories: number;
-			protein: number;
-			carbs: number;
-			fat: number;
-			imageFilename?: string | null;
-			onEdit?: () => void;
-			onDelete?: () => void;
-		} = $props();
-	
-		function handleDelete() {
-			if (onDelete && confirm('Delete this meal?')) onDelete();
-		}
+		
+			let {
+				description,
+				calories,
+				protein,
+				carbs,
+				fat,
+				imageFilename,
+				onEdit,
+				onDelete
+			}: {
+				description: string;
+				calories: number;
+				protein: number;
+				carbs: number;
+				fat: number;
+				imageFilename?: string | null;
+				onEdit?: () => void;
+				onDelete?: () => void;
+			} = $props();
+		
+			function handleDelete() {
+				if (onDelete && confirm('Delete this meal?')) onDelete();
+			}
 </script>
 
 <Card.Content class="py-3 px-4">

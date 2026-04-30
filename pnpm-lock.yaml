@@ -14,6 +14,9 @@ importers:
       '@azure/storage-blob':
         specifier: ^12.31.0
         version: 12.31.0
+      '@libsql/client':
+        specifier: 0.17.2
+        version: 0.17.2
       ai:
         specifier: 6.0.158
         version: 6.0.158(zod@4.4.1)
@@ -45,9 +48,6 @@ importers:
       '@internationalized/date':
         specifier: ^3.12.0
         version: 3.12.0
-      '@libsql/client':
-        specifier: 0.17.2
-        version: 0.17.2
       '@lucide/svelte':
         specifier: ^1.8.0
         version: 1.8.0(svelte@5.55.3(@typescript-eslint/types@8.58.1))

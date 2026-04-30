@@ -1,17 +1,18 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
-		import type { Meal } from '$lib/types';
-		import MealCard from './MealCard.svelte';
+			import type { Meal } from '$lib/types';
+			import MealCard from './MealCard.svelte';
 	
-		let {
-			meals,
-			onEdit,
-			onDelete
-		}: {
-			meals: Meal[];
-			onEdit?: (meal: Meal) => void;
-			onDelete?: (meal: Meal) => void;
-		} = $props();
+		
+			let {
+				meals,
+				onEdit,
+				onDelete
+			}: {
+				meals: Meal[];
+				onEdit?: (meal: Meal) => void;
+				onDelete?: (meal: Meal) => void;
+			} = $props();
 </script>
 
 <div class="flex-1 overflow-y-auto">

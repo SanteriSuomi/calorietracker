@@ -257,7 +257,7 @@ GOOGLE_CLIENT_SECRET=        # Optional
 - [x] 7. AI integration — Settings page, Vercel AI SDK provider, analyze endpoint, AiInputBar
 - [x] 8. Image handling — Upload, encrypt/decrypt (dual storage), serve with auth check
 - [x] 9. Calendar view — Month grid + list tabs, navigate to day
-- [ ] 10. Docker + local dev — Dockerfile, docker-compose
+- [x] 10. Docker + local dev — Dockerfile, docker-compose
 - [ ] 11. IaC — Bicep templates for Azure resources
 - [ ] 12. CI/CD — Azure DevOps pipeline (build, deploy Azure, deploy self-hosted)
 - [ ] 13. Internationalization — i18n setup (e.g. `sveltekit-i18n` or `paraglide`), locale detection, extract all hardcoded strings to translation files, language switcher in Settings, start with English + one additional language
