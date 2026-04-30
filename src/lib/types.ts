@@ -7,3 +7,12 @@ export interface Meal {
 	fat: number;
 	source: string;
 }
+
+export interface MealFormData {
+	description: string;
+	calories: number;
+	protein: number;
+	carbs: number;
+	fat: number;
+	date: string;
+}

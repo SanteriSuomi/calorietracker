@@ -62,6 +62,7 @@ Key entry points: `src/lib/server/auth.ts` (BetterAuth config), `src/lib/auth-cl
 - Explicit named imports, no wildcards or barrel files
 - Case-sensitive paths always
 - Strict TypeScript, types reflect reality (`?` for optional, `| null` for nullable)
+- **Validation must be done on both frontend and backend.** Client-side validation provides immediate feedback; server-side validation is the source of truth. Never rely on client-only validation.
 - Audit fields on all custom tables: `createdAt, createdBy, updatedAt, updatedBy` (via `auditColumns()` helper spread into table definitions)
 - Comments only for exotic functions, workarounds, complex algorithms
 - Logging: one wide event per request, emitted in `finally`, structured JSON via Pino. Handlers use `addLogContext()` from `$lib/server/logger` to add business context; the middleware emits the event automatically.
@@ -87,6 +88,15 @@ Key entry points: `src/lib/server/auth.ts` (BetterAuth config), `src/lib/auth-cl
 Separate schema files per dialect (`sqlite/schema.ts` uses `sqliteTable`, `pg/schema.ts` uses `pgTable`). Both must be kept in sync. `index.ts` uses top-level await with dynamic import to load only the active provider's driver.
 
 Drizzle configs: `drizzle.config.ts` (SQLite, default), `drizzle-pg.config.ts` (PG). Migration output goes to `drizzle/sqlite/` and `drizzle/pg/` respectively.
+
+## Dev Seed
+
+`pnpm seed:dev` creates a test user for local development (libsql only):
+
+- **Email:** `test@gmail.com`
+- **Password:** `Password1`
+
+Requires `DEV_SEED=true` in `.env` — script exits silently otherwise. Idempotent — skips if user already exists.
 
 ## Auth Middleware
 
@@ -140,7 +150,15 @@ After changes, run in order (fail fast):
 
 1. Type check → 2. Lint → 3. Unit tests → 4. Integration tests
 
-For web apps: use `browser-automation` skill to verify UI changes work.
+**Browser verification is mandatory for any change that affects UI** — components, pages, routes with rendered output, styling, layout, or client-side interactivity. Use the `browser-automation` skill with a running dev server (see "Dev Server & Browser Verification" section). This applies to:
+
+- New or modified Svelte components (`.svelte` files)
+- Route pages (`+page.svelte`, `+page.server.ts` load functions)
+- CSS/Tailwind changes that affect visual output
+- Client-side state changes, form handling, navigation flows
+- shadcn-svelte component additions or modifications
+
+Do NOT skip browser verification for UI changes. Passing typecheck + lint + tests is not sufficient — the sheet component bug (children not passed to Dialog.Root) and `invalidate()` not triggering re-fetch were only caught by browser testing.
 
 ## Dev Server (pm2)
 
