@@ -8,7 +8,7 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	const user = locals.user;
-	if (!user) return { meals: [] as Meal[], date: today(), dailyCalorieGoal: DEFAULT_CALORIE_GOAL };
+	if (!user) return { meals: [] as Meal[], date: today(), dailyCalorieGoal: DEFAULT_CALORIE_GOAL, aiConfigured: false };
 
 	const raw = url.searchParams.get('date');
 	let date = raw && isValidDate(raw) ? raw : today();
@@ -28,15 +28,23 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			.from(meal)
 			.where(and(eq(meal.userId, user.id), eq(meal.date, date))),
 		db
-			.select({ dailyCalorieGoal: userSettings.dailyCalorieGoal })
+			.select({
+				dailyCalorieGoal: userSettings.dailyCalorieGoal,
+				aiEndpointUrl: userSettings.aiEndpointUrl,
+				aiApiKey: userSettings.aiApiKey,
+				aiModel: userSettings.aiModel
+			})
 			.from(userSettings)
 			.where(eq(userSettings.userId, user.id))
 			.limit(1)
 	]);
 
+	const settingsRow = settingsResult[0];
+
 	return {
 		meals: mealsResult as Meal[],
 		date,
-		dailyCalorieGoal: settingsResult[0]?.dailyCalorieGoal ?? DEFAULT_CALORIE_GOAL
+		dailyCalorieGoal: settingsRow?.dailyCalorieGoal ?? DEFAULT_CALORIE_GOAL,
+		aiConfigured: !!(settingsRow?.aiEndpointUrl && settingsRow?.aiApiKey && settingsRow?.aiModel)
 	};
 };
