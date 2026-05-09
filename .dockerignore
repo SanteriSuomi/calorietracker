@@ -1,0 +1,16 @@
+.git
+.svelte-kit
+build
+node_modules
+data/
+*.db
+.env
+.env.*
+!.env.example
+tests/
+docs/
+drizzle/
+.claude/
+.agents/
+*.md
+!README.md
