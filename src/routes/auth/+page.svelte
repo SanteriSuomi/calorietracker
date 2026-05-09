@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	
-		
-			let { form } = $props();
-		
-			let mode = $state<'signin' | 'signup'>('signin');
+		import { m } from '$lib/paraglide/messages';
+
+		let { form } = $props();
+
+		let mode = $state<'signin' | 'signup'>('signin');
 </script>
 
 <svelte:head>
-	<title>{mode === 'signin' ? 'Sign In' : 'Sign Up'} — CalorieTracker</title>
+	<title>{mode === 'signin' ? m.auth_title_sign_in() : m.auth_title_sign_up()} — {m.app_name()}</title>
 </svelte:head>
 
 <div class="flex min-h-dvh items-center justify-center bg-gray-50 px-4">
 	<div class="w-full max-w-sm">
-		<h1 class="mb-8 text-center text-2xl font-bold text-gray-900">CalorieTracker</h1>
+		<h1 class="mb-8 text-center text-2xl font-bold text-gray-900">{m.app_name()}</h1>
 
 		{#if form?.message}
 			<div
@@ -34,7 +34,7 @@
 						? 'bg-white text-gray-900 shadow-sm'
 						: 'text-gray-500 hover:text-gray-700'}"
 				>
-					Sign In
+					{m.auth_tab_sign_in()}
 				</button>
 				<button
 					type="button"
@@ -44,7 +44,7 @@
 						? 'bg-white text-gray-900 shadow-sm'
 						: 'text-gray-500 hover:text-gray-700'}"
 				>
-					Sign Up
+					{m.auth_tab_sign_up()}
 				</button>
 			</div>
 
@@ -52,8 +52,7 @@
 				<form method="POST" action="?/signIn" use:enhance>
 					<div class="space-y-4">
 						<div>
-							<label for="email" class="mb-1.5 block text-sm font-medium text-gray-700">Email</label
-							>
+							<label for="email" class="mb-1.5 block text-sm font-medium text-gray-700">{m.auth_email_label()}</label>
 							<input
 								id="email"
 								name="email"
@@ -61,13 +60,11 @@
 								required
 								autocomplete="email"
 								class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-								placeholder="you@example.com"
+								placeholder={m.auth_email_placeholder()}
 							/>
 						</div>
 						<div>
-							<label for="password" class="mb-1.5 block text-sm font-medium text-gray-700"
-								>Password</label
-							>
+							<label for="password" class="mb-1.5 block text-sm font-medium text-gray-700">{m.auth_password_label()}</label>
 							<input
 								id="password"
 								name="password"
@@ -75,14 +72,14 @@
 								required
 								autocomplete="current-password"
 								class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-								placeholder="••••••••"
+								placeholder={m.auth_password_placeholder_sign_in()}
 							/>
 						</div>
 						<button
 							type="submit"
 							class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 focus:outline-none"
 						>
-							Sign In
+							{m.auth_submit_sign_in()}
 						</button>
 					</div>
 				</form>
@@ -90,7 +87,7 @@
 				<form method="POST" action="?/signUp" use:enhance>
 					<div class="space-y-4">
 						<div>
-							<label for="name" class="mb-1.5 block text-sm font-medium text-gray-700">Name</label>
+							<label for="name" class="mb-1.5 block text-sm font-medium text-gray-700">{m.auth_name_label()}</label>
 							<input
 								id="name"
 								name="name"
@@ -98,13 +95,11 @@
 								required
 								autocomplete="name"
 								class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-								placeholder="Your name"
+								placeholder={m.auth_name_placeholder()}
 							/>
 						</div>
 						<div>
-							<label for="signup-email" class="mb-1.5 block text-sm font-medium text-gray-700"
-								>Email</label
-							>
+							<label for="signup-email" class="mb-1.5 block text-sm font-medium text-gray-700">{m.auth_email_label()}</label>
 							<input
 								id="signup-email"
 								name="email"
@@ -112,13 +107,11 @@
 								required
 								autocomplete="email"
 								class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-								placeholder="you@example.com"
+								placeholder={m.auth_email_placeholder()}
 							/>
 						</div>
 						<div>
-							<label for="signup-password" class="mb-1.5 block text-sm font-medium text-gray-700"
-								>Password</label
-							>
+							<label for="signup-password" class="mb-1.5 block text-sm font-medium text-gray-700">{m.auth_password_label()}</label>
 							<input
 								id="signup-password"
 								name="password"
@@ -127,14 +120,14 @@
 								minlength="8"
 								autocomplete="new-password"
 								class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-								placeholder="Min. 8 characters"
+								placeholder={m.auth_password_placeholder_sign_up()}
 							/>
 						</div>
 						<button
 							type="submit"
 							class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 focus:outline-none"
 						>
-							Create Account
+							{m.auth_submit_sign_up()}
 						</button>
 					</div>
 				</form>

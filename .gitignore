@@ -26,3 +26,6 @@ vite.config.ts.timestamp-*
 
 # Image storage
 data/
+
+# Paraglide generated
+src/lib/paraglide/

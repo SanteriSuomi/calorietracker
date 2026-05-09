@@ -1,3 +1,4 @@
+import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { playwright } from '@vitest/browser-playwright';
@@ -5,7 +6,24 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	ssr: { external: ['@libsql/client'] },
-	plugins: [tailwindcss(), sveltekit()],
+	plugins: [
+		tailwindcss(),
+		sveltekit(),
+		paraglideVitePlugin({
+			project: './project.inlang',
+			outdir: './src/lib/paraglide',
+			strategy: ['url', 'cookie', 'baseLocale'],
+			urlPatterns: [
+				{
+					pattern: '/:path(.*)?',
+					localized: [
+						['fi', '/fi/:path(.*)?'],
+						['en', '/:path(.*)?']
+					]
+				}
+			]
+		})
+	],
 	test: {
 		expect: { requireAssertions: true },
 		projects: [

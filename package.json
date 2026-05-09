@@ -33,6 +33,7 @@
 		"@better-auth/cli": "1.4.21",
 		"@biomejs/biome": "2.4.11",
 		"@fontsource-variable/inter": "^5.2.8",
+		"@inlang/paraglide-js": "^2.18.0",
 		"@internationalized/date": "^3.12.0",
 		"@lucide/svelte": "^1.8.0",
 		"@sveltejs/adapter-node": "5.5.4",
