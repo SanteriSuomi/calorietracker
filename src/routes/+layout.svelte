@@ -1,7 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	
-		import { Settings } from '@lucide/svelte';
+		import { CalendarDays, Settings } from '@lucide/svelte';
 		import favicon from '$lib/assets/favicon.svg';
 		import { authClient } from '$lib/auth-client';
 	
@@ -21,6 +21,9 @@
 			<div class="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
 				<span class="text-sm font-semibold text-foreground">CalorieTracker</span>
 				<div class="flex items-center gap-3">
+					<a href="/calendar" class="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground" aria-label="Calendar">
+						<CalendarDays size={18} />
+					</a>
 					<a href="/settings" class="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground" aria-label="Settings">
 						<Settings size={18} />
 					</a>

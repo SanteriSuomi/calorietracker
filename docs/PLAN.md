@@ -256,7 +256,7 @@ GOOGLE_CLIENT_SECRET=        # Optional
 - [x] 6. Manual meal CRUD — ManualEntrySheet, API routes, DB operations
 - [x] 7. AI integration — Settings page, Vercel AI SDK provider, analyze endpoint, AiInputBar
 - [x] 8. Image handling — Upload, encrypt/decrypt (dual storage), serve with auth check
-- [ ] 9. Calendar view — Month grid + list tabs, navigate to day
+- [x] 9. Calendar view — Month grid + list tabs, navigate to day
 - [ ] 10. Docker + local dev — Dockerfile, docker-compose
 - [ ] 11. IaC — Bicep templates for Azure resources
 - [ ] 12. CI/CD — Azure DevOps pipeline (build, deploy Azure, deploy self-hosted)
