@@ -40,6 +40,14 @@
 			}
 		},
 		{
+			"includes": ["src/app.html"],
+			"linter": {
+				"rules": {
+					"a11y": { "useValidLang": "off" }
+				}
+			}
+		},
+		{
 			"includes": ["**/*.svelte"],
 			"linter": {
 				"rules": {

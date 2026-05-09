@@ -2,6 +2,8 @@ import type { Handle, RequestEvent } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { building } from '$app/environment';
+import { deLocalizeUrl, getLocale, getTextDirection } from '$lib/paraglide/runtime';
+import { paraglideMiddleware } from '$lib/paraglide/server';
 import { auth } from '$lib/server/auth';
 import { API_BASE, AUTH_API_ROUTE, AUTH_PAGE_ROUTE } from '$lib/server/constants';
 import { logger } from '$lib/server/logger';
@@ -83,11 +85,22 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	return svelteKitHandler({ event, resolve, auth, building });
 };
 
+const handleParaglide: Handle = ({ event, resolve }) =>
+	paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
+		event.request = localizedRequest;
+		return resolve(event, {
+			transformPageChunk: ({ html }) => {
+				return html.replace('%lang%', locale).replace('%dir%', getTextDirection(locale));
+			}
+		});
+	});
+
 const handleAuthGuard: Handle = async ({ event, resolve }) => {
 	if (building) return resolve(event);
 
 	const { pathname } = event.url;
-	const isAuthPage = pathname === AUTH_PAGE_ROUTE;
+	const canonicalPath = deLocalizeUrl(event.url).pathname;
+	const isAuthPage = canonicalPath === AUTH_PAGE_ROUTE;
 	const isApiRoute = pathname.startsWith(API_BASE);
 
 	if (pathname.startsWith(AUTH_API_ROUTE)) {
@@ -102,19 +115,28 @@ const handleAuthGuard: Handle = async ({ event, resolve }) => {
 			});
 		}
 		if (!isAuthPage) {
+			const locale = getLocale();
+			const authRedirect = locale === 'en' ? AUTH_PAGE_ROUTE : `/${locale}${AUTH_PAGE_ROUTE}`;
 			return new Response(null, {
 				status: 302,
-				headers: { Location: AUTH_PAGE_ROUTE }
+				headers: { Location: authRedirect }
 			});
 		}
 	} else if (isAuthPage) {
+		const locale = getLocale();
+		const homeRedirect = locale === 'en' ? '/' : `/${locale}/`;
 		return new Response(null, {
 			status: 302,
-			headers: { Location: '/' }
+			headers: { Location: homeRedirect }
 		});
 	}
 
 	return resolve(event);
 };
 
-export const handle: Handle = sequence(handleLogging, handleBetterAuth, handleAuthGuard);
+export const handle: Handle = sequence(
+	handleParaglide,
+	handleLogging,
+	handleBetterAuth,
+	handleAuthGuard
+);

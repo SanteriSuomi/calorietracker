@@ -201,24 +201,26 @@ Same Drizzle schema, different adapter.
 
 ---
 
-## CI/CD Pipeline (azure-pipelines.yml)
+## CI/CD Pipeline (GitHub Actions)
 
 ```
-Stage 1: Build
+Job 1: Build & Test
   → Install deps, lint, typecheck, test
   → Build Docker image
-  → Push to Azure Container Registry
+  → Push to GitHub Container Registry (GHCR)
 
-Stage 2: Deploy Azure (on main)
+Job 2: Deploy Azure (on main, after build)
   → az deployment group create -f infra/main.bicep (idempotent)
   → az containerapp update --image <new-tag>
 
-Stage 3: Deploy Self-Hosted (on main, parallel to Stage 2)
-  → SSH into server
-  → docker pull + docker-compose up -d
+Job 3: Deploy MiniPC (on main, after build, parallel to Job 2)
+  → Self-hosted GitHub Actions runner on MiniPC
+  → docker pull from GHCR + docker compose up -d
 ```
 
-## Bicep Resources (infra/main.bicep)
+## Infrastructure
+
+### Azure Resources (infra/main.bicep)
 
 - Container Apps Environment
 - Container App (ACR image, minReplicas: 0)
@@ -226,6 +228,14 @@ Stage 3: Deploy Self-Hosted (on main, parallel to Stage 2)
 - PostgreSQL Flexible Server + Database
 - Blob Storage Account
 - Key Vault (secrets)
+
+### MiniPC (192.168.1.233)
+
+- Docker Compose for CalorieTracker (separate from existing `~/mediaserver/compose.yml`)
+- Self-hosted GitHub Actions runner (Docker container)
+- Tailscale VPN (already configured)
+- Reverse proxy + HTTPS (Traefik or Caddy)
+- `.env` template for self-hosted config
 
 ---
 
@@ -258,7 +268,11 @@ GOOGLE_CLIENT_SECRET=        # Optional
 - [x] 8. Image handling — Upload, encrypt/decrypt (dual storage), serve with auth check
 - [x] 9. Calendar view — Month grid + list tabs, navigate to day
 - [x] 10. Docker + local dev — Dockerfile, docker-compose
-- [ ] 11. IaC — Bicep templates for Azure resources
-- [ ] 12. CI/CD — Azure DevOps pipeline (build, deploy Azure, deploy self-hosted)
-- [ ] 13. Internationalization — i18n setup (e.g. `sveltekit-i18n` or `paraglide`), locale detection, extract all hardcoded strings to translation files, language switcher in Settings, start with English + one additional language
-- [ ] 14. Polish — Edit/delete, loading states, error handling, PWA manifest
+- [ ] 11. IaC — Bicep templates for Azure resources *(superseded by step 17)*
+- [ ] 12. CI/CD — Azure DevOps pipeline *(superseded by step 18 — now GitHub Actions)*
+- [x] 13. Internationalization — i18n setup (paraglide), locale detection, extract all hardcoded strings to translation files, language switcher in Settings, English + Finnish
+- [ ] 14. Polish — Loading states, error handling, PWA manifest. Bugfixes: title link to home, brand name not translated ("CalorieTracker"), settings page scrollbar, image+text AI input
+- [ ] 15. Settings & Calendar Improvements — Expose macro goals (protein/carbs/fat) in Settings UI. Configurable AI system prompt with assertive default + enforced format suffix. Reorder Settings: AI Config → Goals → Language → Account. Calendar List: extended range (90 days), scroll container, calories per day row, date search/filter
+- [ ] 16. AI Goal Estimation & Account Management — User profile inputs (age, weight, height, activity level, goal). POST /api/ai/estimate-goals → AI returns kcal + macro targets. "Estimate with AI" button pre-fills Goals section. Delete account + all user data (meals, settings, images, auth). Confirmation dialog, cascade cleanup, sign out + redirect
+- [ ] 17. Infrastructure Setup — Azure: Bicep templates (Container Apps, ACR, PostgreSQL, Blob Storage, Key Vault). MiniPC: Docker Compose, self-hosted GitHub Actions runner, Tailscale networking, reverse proxy + HTTPS, .env template
+- [ ] 18. CI/CD — GitHub Actions: build + lint + typecheck + test, Docker image → GHCR, deploy Azure (Bicep + container app update), deploy MiniPC (self-hosted runner pulls image + docker compose up -d)

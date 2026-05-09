@@ -1,3 +1,5 @@
+import { getLocale } from '$lib/paraglide/runtime';
+
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function isValidDate(d: string): boolean {
@@ -20,7 +22,7 @@ export function addDays(d: string, days: number): string {
 
 export function formatDate(d: string): string {
 	const [y, m, day] = d.split('-').map(Number);
-	return new Date(y, m - 1, day).toLocaleDateString('en-US', {
+	return new Date(y, m - 1, day).toLocaleDateString(getLocale(), {
 		month: 'long',
 		day: 'numeric',
 		year: 'numeric'
@@ -51,7 +53,7 @@ export function toDateString(year: number, month: number, day: number): string {
 
 export function formatMonthYear(monthStr: string): string {
 	const [y, m] = monthStr.split('-').map(Number);
-	return new Date(y, m - 1, 1).toLocaleDateString('en-US', {
+	return new Date(y, m - 1, 1).toLocaleDateString(getLocale(), {
 		month: 'long',
 		year: 'numeric'
 	});
