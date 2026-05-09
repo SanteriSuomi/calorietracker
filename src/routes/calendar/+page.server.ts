@@ -44,7 +44,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const gridEnd = endOfMonth(addMonths(`${effectiveMonth}-01`, 1));
 
 	const listEnd = today();
-	const listStart = addDays(listEnd, -29);
+	const listStart = addDays(listEnd, -89);
 
 	const [gridRows, listRows, settingsResult] = await Promise.all([
 		db

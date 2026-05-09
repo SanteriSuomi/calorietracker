@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AI_FORMAT_SUFFIX, DEFAULT_AI_SYSTEM_PROMPT } from '$lib/server/db/shared/constants';
 
 vi.mock('ai', () => ({
 	generateText: vi.fn(),
@@ -115,5 +116,42 @@ describe('AI analyze — settings check', () => {
 		};
 		const configured = !!(settings.aiEndpointUrl && settings.aiApiKey && settings.aiModel);
 		expect(configured).toBe(true);
+	});
+});
+
+describe('AI analyze — system prompt construction', () => {
+	it('uses custom prompt when set', () => {
+		const customPrompt = 'You are a keto-focused nutritionist.';
+		const aiSystemPrompt = customPrompt;
+		const systemPrompt = (aiSystemPrompt || DEFAULT_AI_SYSTEM_PROMPT) + AI_FORMAT_SUFFIX;
+		expect(systemPrompt).toContain('keto-focused');
+		expect(systemPrompt).toContain('You MUST respond');
+	});
+
+	it('uses default prompt when null', () => {
+		const aiSystemPrompt = null;
+		const systemPrompt = (aiSystemPrompt || DEFAULT_AI_SYSTEM_PROMPT) + AI_FORMAT_SUFFIX;
+		expect(systemPrompt).toContain('expert nutrition estimation assistant');
+		expect(systemPrompt).toContain('You MUST respond');
+	});
+
+	it('uses default prompt when empty string', () => {
+		const aiSystemPrompt = '';
+		const systemPrompt = (aiSystemPrompt || DEFAULT_AI_SYSTEM_PROMPT) + AI_FORMAT_SUFFIX;
+		expect(systemPrompt).toContain('expert nutrition estimation assistant');
+	});
+
+	it('always appends format suffix', () => {
+		const customPrompt = 'Custom prompt';
+		const systemPrompt = (customPrompt || DEFAULT_AI_SYSTEM_PROMPT) + AI_FORMAT_SUFFIX;
+		expect(systemPrompt.endsWith(AI_FORMAT_SUFFIX)).toBe(true);
+	});
+
+	it('format suffix contains required fields', () => {
+		expect(AI_FORMAT_SUFFIX).toContain('"description"');
+		expect(AI_FORMAT_SUFFIX).toContain('"calories"');
+		expect(AI_FORMAT_SUFFIX).toContain('"protein"');
+		expect(AI_FORMAT_SUFFIX).toContain('"carbs"');
+		expect(AI_FORMAT_SUFFIX).toContain('"fat"');
 	});
 });

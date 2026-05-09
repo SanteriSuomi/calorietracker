@@ -5,11 +5,9 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '$lib/server/db';
 import { userSettings } from '$lib/server/db/schema';
+import { AI_FORMAT_SUFFIX, DEFAULT_AI_SYSTEM_PROMPT } from '$lib/server/db/shared/constants';
 import { addLogContext } from '$lib/server/logger';
 import type { RequestHandler } from './$types';
-
-const SYSTEM_PROMPT =
-	'You are a nutrition estimation assistant. Given a food description, estimate the nutritional content for a typical serving. Return a JSON object with: description (cleaned-up food name), calories (kcal), protein (grams), carbs (grams), fat (grams). All numeric values must be non-negative integers. If the input is ambiguous, estimate for a standard portion.';
 
 const nutritionSchema = z.object({
 	description: z.string(),
@@ -47,7 +45,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		.select({
 			aiEndpointUrl: userSettings.aiEndpointUrl,
 			aiApiKey: userSettings.aiApiKey,
-			aiModel: userSettings.aiModel
+			aiModel: userSettings.aiModel,
+			aiSystemPrompt: userSettings.aiSystemPrompt
 		})
 		.from(userSettings)
 		.where(eq(userSettings.userId, user.id))
@@ -58,6 +57,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json({ error: 'AI not configured. Go to Settings to configure.' }, { status: 400 });
 	}
 
+	const systemPrompt = (settings.aiSystemPrompt || DEFAULT_AI_SYSTEM_PROMPT) + AI_FORMAT_SUFFIX;
+
 	try {
 		const provider = createOpenAI({
 			baseURL: settings.aiEndpointUrl,
@@ -67,7 +68,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const { output } = await generateText({
 			model: provider(settings.aiModel),
 			output: Output.object({ schema: nutritionSchema }),
-			system: SYSTEM_PROMPT,
+			system: systemPrompt,
 			prompt: parsed.description.trim()
 		});
 

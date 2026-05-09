@@ -174,5 +174,121 @@ describe('Settings — defaults', () => {
 		expect(row.aiEndpointUrl).toBeNull();
 		expect(row.aiApiKey).toBeNull();
 		expect(row.aiModel).toBeNull();
+		expect(row.dailyProteinGoal).toBeNull();
+		expect(row.dailyCarbsGoal).toBeNull();
+		expect(row.dailyFatGoal).toBeNull();
+		expect(row.aiSystemPrompt).toBeNull();
+	});
+});
+
+describe('Settings — macro goals round-trip', () => {
+	it('saves and reads macro goals', async () => {
+		const userId = 'test-user-macro-goals';
+		const now = new Date();
+
+		await db.insert(schema.user).values({
+			id: userId,
+			name: 'Macro Goals User',
+			email: 'macro-goals@example.com',
+			emailVerified: false,
+			createdAt: now,
+			updatedAt: now
+		});
+
+		await db.insert(schema.userSettings).values({
+			userId,
+			dailyProteinGoal: 180,
+			dailyCarbsGoal: 300,
+			dailyFatGoal: 70,
+			createdAt: now,
+			createdBy: userId,
+			updatedAt: now,
+			updatedBy: userId
+		});
+
+		const [row] = await db
+			.select()
+			.from(schema.userSettings)
+			.where(eq(schema.userSettings.userId, userId));
+
+		expect(row.dailyProteinGoal).toBe(180);
+		expect(row.dailyCarbsGoal).toBe(300);
+		expect(row.dailyFatGoal).toBe(70);
+	});
+
+	it('updates macro goals to null', async () => {
+		const userId = 'test-user-macro-goals';
+
+		await db
+			.update(schema.userSettings)
+			.set({
+				dailyProteinGoal: null,
+				dailyCarbsGoal: null,
+				dailyFatGoal: null,
+				updatedAt: new Date(),
+				updatedBy: userId
+			})
+			.where(eq(schema.userSettings.userId, userId));
+
+		const [row] = await db
+			.select()
+			.from(schema.userSettings)
+			.where(eq(schema.userSettings.userId, userId));
+
+		expect(row.dailyProteinGoal).toBeNull();
+		expect(row.dailyCarbsGoal).toBeNull();
+		expect(row.dailyFatGoal).toBeNull();
+	});
+});
+
+describe('Settings — system prompt round-trip', () => {
+	it('saves and reads custom system prompt', async () => {
+		const userId = 'test-user-system-prompt';
+		const now = new Date();
+
+		await db.insert(schema.user).values({
+			id: userId,
+			name: 'Prompt User',
+			email: 'prompt@example.com',
+			emailVerified: false,
+			createdAt: now,
+			updatedAt: now
+		});
+
+		await db.insert(schema.userSettings).values({
+			userId,
+			aiSystemPrompt: 'You are a helpful nutritionist.',
+			createdAt: now,
+			createdBy: userId,
+			updatedAt: now,
+			updatedBy: userId
+		});
+
+		const [row] = await db
+			.select()
+			.from(schema.userSettings)
+			.where(eq(schema.userSettings.userId, userId));
+
+		expect(row.aiSystemPrompt).toBe('You are a helpful nutritionist.');
+	});
+
+	it('clears system prompt to null', async () => {
+		const userId = 'test-user-system-prompt';
+
+		await db
+			.update(schema.userSettings)
+			.set({
+				aiSystemPrompt: null,
+				updatedAt: new Date(),
+				updatedBy: userId
+			})
+			.where(eq(schema.userSettings.userId, userId));
+
+		const [row] = await db
+			.select()
+			.from(schema.userSettings)
+			.where(eq(schema.userSettings.userId, userId));
+
+		expect(row.aiSystemPrompt).toBeNull();
 	});
 });

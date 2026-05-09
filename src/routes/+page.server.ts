@@ -1,7 +1,12 @@
 import { and, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { meal, userSettings } from '$lib/server/db/schema';
-import { DEFAULT_CALORIE_GOAL } from '$lib/server/db/shared/constants';
+import {
+	DEFAULT_CALORIE_GOAL,
+	DEFAULT_CARBS_GOAL,
+	DEFAULT_FAT_GOAL,
+	DEFAULT_PROTEIN_GOAL
+} from '$lib/server/db/shared/constants';
 import type { Meal } from '$lib/types';
 import { isValidDate, today } from '$lib/utils/date';
 import type { PageServerLoad } from './$types';
@@ -13,6 +18,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			meals: [] as Meal[],
 			date: today(),
 			dailyCalorieGoal: DEFAULT_CALORIE_GOAL,
+			dailyProteinGoal: DEFAULT_PROTEIN_GOAL,
+			dailyCarbsGoal: DEFAULT_CARBS_GOAL,
+			dailyFatGoal: DEFAULT_FAT_GOAL,
 			aiConfigured: false
 		};
 
@@ -37,6 +45,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		db
 			.select({
 				dailyCalorieGoal: userSettings.dailyCalorieGoal,
+				dailyProteinGoal: userSettings.dailyProteinGoal,
+				dailyCarbsGoal: userSettings.dailyCarbsGoal,
+				dailyFatGoal: userSettings.dailyFatGoal,
 				aiEndpointUrl: userSettings.aiEndpointUrl,
 				aiApiKey: userSettings.aiApiKey,
 				aiModel: userSettings.aiModel
@@ -52,6 +63,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		meals: mealsResult as Meal[],
 		date,
 		dailyCalorieGoal: settingsRow?.dailyCalorieGoal ?? DEFAULT_CALORIE_GOAL,
+		dailyProteinGoal: settingsRow?.dailyProteinGoal ?? DEFAULT_PROTEIN_GOAL,
+		dailyCarbsGoal: settingsRow?.dailyCarbsGoal ?? DEFAULT_CARBS_GOAL,
+		dailyFatGoal: settingsRow?.dailyFatGoal ?? DEFAULT_FAT_GOAL,
 		aiConfigured: !!(settingsRow?.aiEndpointUrl && settingsRow?.aiApiKey && settingsRow?.aiModel)
 	};
 };

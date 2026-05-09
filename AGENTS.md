@@ -168,6 +168,8 @@ taskkill //F //IM agent-browser-win32-x64.exe 2>/dev/null
 
 **Recovery:** If `open` hangs, kill all Chrome/daemon processes and retry.
 
+**Fallback when `open` hangs persistently:** Use `curl -s -b /tmp/cookies.txt` to verify SSR output. Sign in via `curl -c /tmp/cookies.txt -X POST http://localhost:5173/api/auth/sign-in/email -H 'Content-Type: application/json' -d '{"email":"test@gmail.com","password":"Password1"}'`, then use `-b /tmp/cookies.txt` for authenticated requests. Grep the HTML for element IDs, text content, and CSS classes to verify UI correctness. This doesn't test client-side interactivity but confirms server data flows and component rendering.
+
 ## Documentation
 
 - `docs/PLAN.md` — Living implementation plan with step checklist

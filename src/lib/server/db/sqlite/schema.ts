@@ -156,6 +156,7 @@ export const userSettings = sqliteTable('user_settings', {
 	aiEndpointUrl: text('ai_endpoint_url'),
 	aiApiKey: text('ai_api_key'),
 	aiModel: text('ai_model'),
+	aiSystemPrompt: text('ai_system_prompt'),
 	...auditColumns()
 });
 
