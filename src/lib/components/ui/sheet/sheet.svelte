@@ -3,14 +3,15 @@
 	
 		
 			
-				let {
-					open = $bindable(),
-					onOpenChange,
-					children
-				}: Dialog.RootProps & {
-					open?: boolean;
-					onOpenChange?: (isOpen: boolean) => void;
-				} = $props();
+				
+					let {
+						open = $bindable(),
+						onOpenChange,
+						children
+					}: Dialog.RootProps & {
+						open?: boolean;
+						onOpenChange?: (isOpen: boolean) => void;
+					} = $props();
 </script>
 
 <Dialog.Root bind:open {onOpenChange}>

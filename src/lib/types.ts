@@ -28,9 +28,13 @@ export interface AiAnalysisResult {
 
 export interface UserSettings {
 	dailyCalorieGoal: number;
+	dailyProteinGoal: number | null;
+	dailyCarbsGoal: number | null;
+	dailyFatGoal: number | null;
 	aiEndpointUrl: string | null;
 	aiApiKey: string | null;
 	aiModel: string | null;
+	aiSystemPrompt: string | null;
 }
 
 export interface DaySummary {

@@ -1,18 +1,18 @@
 <script lang="ts">
 	import './layout.css';
-
-		import { CalendarDays, Settings } from '@lucide/svelte';
-		import favicon from '$lib/assets/favicon.svg';
-		import { authClient } from '$lib/auth-client';
-		import { m } from '$lib/paraglide/messages';
-		import { localizeHref } from '$lib/paraglide/runtime';
-
-		let { children, data } = $props();
-
-		async function handleSignOut() {
-			await authClient.signOut();
-			window.location.href = localizeHref('/');
-		}
+	
+			import { CalendarDays, Settings } from '@lucide/svelte';
+			import favicon from '$lib/assets/favicon.svg';
+			import { authClient } from '$lib/auth-client';
+			import { m } from '$lib/paraglide/messages';
+			import { localizeHref } from '$lib/paraglide/runtime';
+	
+			let { children, data } = $props();
+	
+			async function handleSignOut() {
+				await authClient.signOut();
+				window.location.href = localizeHref('/');
+			}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>

@@ -7,11 +7,19 @@ import { addLogContext } from '$lib/server/logger';
 import type { RequestHandler } from './$types';
 
 const MASKED_KEY = 'sk-****';
+const MAX_PROMPT_LENGTH = 2000;
 
 function maskApiKey(key: string | null): string | null {
 	if (!key) return null;
 	if (key.length <= 6) return MASKED_KEY;
 	return `${key.slice(0, 3)}...${key.slice(-4)}`;
+}
+
+function validateNonNegativeInt(value: unknown, fieldName: string): number | null | undefined {
+	if (value === undefined) return undefined;
+	if (value === null) return null;
+	if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) return undefined;
+	return value;
 }
 
 export const GET: RequestHandler = async ({ locals }) => {
@@ -28,9 +36,13 @@ export const GET: RequestHandler = async ({ locals }) => {
 	if (!row) {
 		return json({
 			dailyCalorieGoal: DEFAULT_CALORIE_GOAL,
+			dailyProteinGoal: null,
+			dailyCarbsGoal: null,
+			dailyFatGoal: null,
 			aiEndpointUrl: null,
 			aiApiKey: null,
-			aiModel: null
+			aiModel: null,
+			aiSystemPrompt: null
 		});
 	}
 
@@ -38,17 +50,25 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 	return json({
 		dailyCalorieGoal: row.dailyCalorieGoal,
+		dailyProteinGoal: row.dailyProteinGoal,
+		dailyCarbsGoal: row.dailyCarbsGoal,
+		dailyFatGoal: row.dailyFatGoal,
 		aiEndpointUrl: row.aiEndpointUrl,
 		aiApiKey: maskApiKey(row.aiApiKey),
-		aiModel: row.aiModel
+		aiModel: row.aiModel,
+		aiSystemPrompt: row.aiSystemPrompt
 	});
 };
 
 interface SettingsBody {
 	dailyCalorieGoal?: unknown;
+	dailyProteinGoal?: unknown;
+	dailyCarbsGoal?: unknown;
+	dailyFatGoal?: unknown;
 	aiEndpointUrl?: unknown;
 	aiApiKey?: unknown;
 	aiModel?: unknown;
+	aiSystemPrompt?: unknown;
 }
 
 export const PUT: RequestHandler = async ({ request, locals }) => {
@@ -76,6 +96,36 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 		return json({ error: 'dailyCalorieGoal must be a non-negative integer' }, { status: 400 });
 	}
 
+	if (parsed.dailyProteinGoal !== undefined) {
+		if (
+			typeof parsed.dailyProteinGoal !== 'number' ||
+			!Number.isInteger(parsed.dailyProteinGoal) ||
+			parsed.dailyProteinGoal < 0
+		) {
+			return json({ error: 'dailyProteinGoal must be a non-negative integer' }, { status: 400 });
+		}
+	}
+
+	if (parsed.dailyCarbsGoal !== undefined) {
+		if (
+			typeof parsed.dailyCarbsGoal !== 'number' ||
+			!Number.isInteger(parsed.dailyCarbsGoal) ||
+			parsed.dailyCarbsGoal < 0
+		) {
+			return json({ error: 'dailyCarbsGoal must be a non-negative integer' }, { status: 400 });
+		}
+	}
+
+	if (parsed.dailyFatGoal !== undefined) {
+		if (
+			typeof parsed.dailyFatGoal !== 'number' ||
+			!Number.isInteger(parsed.dailyFatGoal) ||
+			parsed.dailyFatGoal < 0
+		) {
+			return json({ error: 'dailyFatGoal must be a non-negative integer' }, { status: 400 });
+		}
+	}
+
 	if (
 		parsed.aiEndpointUrl !== undefined &&
 		parsed.aiEndpointUrl !== null &&
@@ -98,6 +148,18 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 		typeof parsed.aiModel !== 'string'
 	) {
 		return json({ error: 'aiModel must be a string' }, { status: 400 });
+	}
+
+	if (parsed.aiSystemPrompt !== undefined && parsed.aiSystemPrompt !== null) {
+		if (typeof parsed.aiSystemPrompt !== 'string') {
+			return json({ error: 'aiSystemPrompt must be a string' }, { status: 400 });
+		}
+		if (parsed.aiSystemPrompt.length > MAX_PROMPT_LENGTH) {
+			return json(
+				{ error: `aiSystemPrompt must be at most ${MAX_PROMPT_LENGTH} characters` },
+				{ status: 400 }
+			);
+		}
 	}
 
 	const existing = await db
@@ -126,14 +188,36 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 			? null
 			: ((parsed.aiModel as string | undefined) ?? null);
 
+	const proteinGoal =
+		parsed.dailyProteinGoal === null
+			? null
+			: (validateNonNegativeInt(parsed.dailyProteinGoal, 'dailyProteinGoal') ?? null);
+	const carbsGoal =
+		parsed.dailyCarbsGoal === null
+			? null
+			: (validateNonNegativeInt(parsed.dailyCarbsGoal, 'dailyCarbsGoal') ?? null);
+	const fatGoal =
+		parsed.dailyFatGoal === null
+			? null
+			: (validateNonNegativeInt(parsed.dailyFatGoal, 'dailyFatGoal') ?? null);
+
+	const systemPrompt =
+		parsed.aiSystemPrompt === '' || parsed.aiSystemPrompt === null
+			? null
+			: ((parsed.aiSystemPrompt as string | undefined) ?? null);
+
 	if (existing.length > 0) {
 		await db
 			.update(userSettings)
 			.set({
 				dailyCalorieGoal: parsed.dailyCalorieGoal,
+				dailyProteinGoal: proteinGoal,
+				dailyCarbsGoal: carbsGoal,
+				dailyFatGoal: fatGoal,
 				aiEndpointUrl: endpointUrl,
 				aiApiKey: apiKey,
 				aiModel: model,
+				aiSystemPrompt: systemPrompt,
 				updatedAt: new Date(),
 				updatedBy: user.id
 			})
@@ -142,9 +226,13 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 		await db.insert(userSettings).values({
 			userId: user.id,
 			dailyCalorieGoal: parsed.dailyCalorieGoal,
+			dailyProteinGoal: proteinGoal,
+			dailyCarbsGoal: carbsGoal,
+			dailyFatGoal: fatGoal,
 			aiEndpointUrl: endpointUrl,
 			aiApiKey: apiKey,
 			aiModel: model,
+			aiSystemPrompt: systemPrompt,
 			createdBy: user.id,
 			updatedBy: user.id
 		});
@@ -154,8 +242,12 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 
 	return json({
 		dailyCalorieGoal: parsed.dailyCalorieGoal,
+		dailyProteinGoal: proteinGoal,
+		dailyCarbsGoal: carbsGoal,
+		dailyFatGoal: fatGoal,
 		aiEndpointUrl: endpointUrl,
 		aiApiKey: maskApiKey(apiKey),
-		aiModel: model
+		aiModel: model,
+		aiSystemPrompt: systemPrompt
 	});
 };

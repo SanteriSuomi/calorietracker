@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-		import { m } from '$lib/paraglide/messages';
-
-		let { form } = $props();
-
-		let mode = $state<'signin' | 'signup'>('signin');
+			import { m } from '$lib/paraglide/messages';
+	
+			let { form } = $props();
+	
+			let mode = $state<'signin' | 'signup'>('signin');
 </script>
 
 <svelte:head>
