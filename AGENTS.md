@@ -157,7 +157,7 @@ If the DB driver fails with `DATABASE_URL is not set`, the `.env` is missing.
 
 ## Dev Server & Browser Verification
 
-Use **pm2** to run the dev server — not Task agents (which block on the long-running process).
+Use the **pm2** skill to run the dev server in the background:
 
 ```bash
 npx pm2 start scripts/pm2-dev.mjs --name calorietracker
