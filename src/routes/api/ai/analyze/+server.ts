@@ -9,6 +9,9 @@ import { AI_FORMAT_SUFFIX, DEFAULT_AI_SYSTEM_PROMPT } from '$lib/server/db/share
 import { addLogContext } from '$lib/server/logger';
 import type { RequestHandler } from './$types';
 
+const SYSTEM_PROMPT_VISION =
+	'You are a nutrition estimation assistant. Analyze the provided food photo (and optional description) to estimate the nutritional content for a typical serving. Return a JSON object with: description (cleaned-up food name), calories (kcal), protein (grams), carbs (grams), fat (grams). All numeric values must be non-negative integers. If the input is ambiguous, estimate for a standard portion.';
+
 const nutritionSchema = z.object({
 	description: z.string(),
 	calories: z.number().int().nonnegative(),
@@ -17,28 +20,53 @@ const nutritionSchema = z.object({
 	fat: z.number().int().nonnegative()
 });
 
-interface AnalyzeBody {
-	description?: unknown;
+async function readFileAsBase64(file: File): Promise<{ base64: string; mediaType: string }> {
+	const arrayBuffer = await file.arrayBuffer();
+	const uint8 = new Uint8Array(arrayBuffer);
+	let binary = '';
+	for (let i = 0; i < uint8.length; i++) {
+		binary += String.fromCharCode(uint8[i]);
+	}
+	const base64 = btoa(binary);
+	return { base64, mediaType: file.type || 'image/jpeg' };
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const user = locals.user;
 	if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
 
-	let body: unknown;
-	try {
-		body = await request.json();
-	} catch {
-		return json({ error: 'Invalid JSON' }, { status: 400 });
+	const contentType = request.headers.get('content-type') ?? '';
+	let description: string | undefined;
+	let imageFile: File | undefined;
+
+	if (contentType.includes('multipart/form-data')) {
+		const formData = await request.formData();
+		const descField = formData.get('description');
+		if (typeof descField === 'string' && descField.trim()) {
+			description = descField.trim();
+		}
+		const imageField = formData.get('image');
+		if (imageField instanceof File && imageField.size > 0) {
+			imageFile = imageField;
+		}
+	} else {
+		let body: unknown;
+		try {
+			body = await request.json();
+		} catch {
+			return json({ error: 'Invalid JSON' }, { status: 400 });
+		}
+		if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+			return json({ error: 'Invalid JSON' }, { status: 400 });
+		}
+		const parsed = body as { description?: unknown };
+		if (typeof parsed.description === 'string' && parsed.description.trim()) {
+			description = parsed.description.trim();
+		}
 	}
 
-	if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-		return json({ error: 'Invalid JSON' }, { status: 400 });
-	}
-
-	const parsed = body as AnalyzeBody;
-	if (typeof parsed.description !== 'string' || parsed.description.trim() === '') {
-		return json({ error: 'description is required' }, { status: 400 });
+	if (!description && !imageFile) {
+		return json({ error: 'description or image is required' }, { status: 400 });
 	}
 
 	const settingsResult = await db
@@ -57,6 +85,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json({ error: 'AI not configured. Go to Settings to configure.' }, { status: 400 });
 	}
 
+	const aiSource = imageFile ? (description ? 'ai_text_vision' : 'ai_vision') : 'ai_text';
 	const systemPrompt = (settings.aiSystemPrompt || DEFAULT_AI_SYSTEM_PROMPT) + AI_FORMAT_SUFFIX;
 
 	try {
@@ -65,20 +94,42 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			apiKey: settings.aiApiKey
 		});
 
-		const { output } = await generateText({
-			model: provider(settings.aiModel),
-			output: Output.object({ schema: nutritionSchema }),
-			system: systemPrompt,
-			prompt: parsed.description.trim()
-		});
+		let aiCallParams: Parameters<typeof generateText>[0];
 
-		addLogContext(locals, { aiSource: 'ai_text', aiModel: settings.aiModel });
+		if (imageFile) {
+			const { base64, mediaType } = await readFileAsBase64(imageFile);
+			const contentParts: Array<
+				{ type: 'text'; text: string } | { type: 'file'; mediaType: string; data: string }
+			> = [];
+			if (description) {
+				contentParts.push({ type: 'text', text: description });
+			}
+			contentParts.push({ type: 'file', mediaType, data: base64 });
+
+			aiCallParams = {
+				model: provider(settings.aiModel),
+				output: Output.object({ schema: nutritionSchema }),
+				system: SYSTEM_PROMPT_VISION,
+				messages: [{ role: 'user', content: contentParts }]
+			};
+		} else {
+			aiCallParams = {
+				model: provider(settings.aiModel),
+				output: Output.object({ schema: nutritionSchema }),
+				system: systemPrompt,
+				prompt: description!
+			};
+		}
+
+		const { output } = await generateText(aiCallParams);
+
+		addLogContext(locals, { aiSource, aiModel: settings.aiModel });
 
 		return json(output);
 	} catch (error) {
 		if (NoObjectGeneratedError.isInstance(error)) {
 			addLogContext(locals, {
-				aiSource: 'ai_text',
+				aiSource,
 				aiModel: settings.aiModel,
 				error: 'invalid_response'
 			});
@@ -86,7 +137,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		addLogContext(locals, {
-			aiSource: 'ai_text',
+			aiSource,
 			aiModel: settings.aiModel,
 			error: error instanceof Error ? error.message : 'unknown'
 		});

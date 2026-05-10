@@ -1,10 +1,14 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-			import { m } from '$lib/paraglide/messages';
+	import { Loader2 } from '@lucide/svelte';
+				import { enhance } from '$app/forms';
+					import { m } from '$lib/paraglide/messages';
 	
-			let { form } = $props();
-	
-			let mode = $state<'signin' | 'signup'>('signin');
+		
+			
+					let { form } = $props();
+			
+					let mode = $state<'signin' | 'signup'>('signin');
+					let submitting = $state(false);
 </script>
 
 <svelte:head>
@@ -49,7 +53,13 @@
 			</div>
 
 			{#if mode === 'signin'}
-				<form method="POST" action="?/signIn" use:enhance>
+				<form method="POST" action="?/signIn" use:enhance={() => {
+					submitting = true;
+					return async ({ update }) => {
+						await update();
+						submitting = false;
+					};
+				}}>
 					<div class="space-y-4">
 						<div>
 							<label for="email" class="mb-1.5 block text-sm font-medium text-gray-700">{m.auth_email_label()}</label>
@@ -77,14 +87,24 @@
 						</div>
 						<button
 							type="submit"
-							class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 focus:outline-none"
+							disabled={submitting}
+							class="w-full flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
 						>
+							{#if submitting}
+								<Loader2 size={16} class="animate-spin" />
+							{/if}
 							{m.auth_submit_sign_in()}
 						</button>
 					</div>
 				</form>
 			{:else}
-				<form method="POST" action="?/signUp" use:enhance>
+				<form method="POST" action="?/signUp" use:enhance={() => {
+					submitting = true;
+					return async ({ update }) => {
+						await update();
+						submitting = false;
+					};
+				}}>
 					<div class="space-y-4">
 						<div>
 							<label for="name" class="mb-1.5 block text-sm font-medium text-gray-700">{m.auth_name_label()}</label>
@@ -125,8 +145,12 @@
 						</div>
 						<button
 							type="submit"
-							class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 focus:outline-none"
+							disabled={submitting}
+							class="w-full flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
 						>
+							{#if submitting}
+								<Loader2 size={16} class="animate-spin" />
+							{/if}
 							{m.auth_submit_sign_up()}
 						</button>
 					</div>

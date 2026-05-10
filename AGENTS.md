@@ -11,7 +11,7 @@ Only run grep/glob/websearch directly in main context when results are trivial (
 
 ## Project Overview
 
-Mobile-first web app for tracking daily calorie and macro intake. Users log meals manually or via AI (text/photo). Current progress: steps 0-9 done (auth, logging, day view, manual meal CRUD, AI, images, calendar view). Step 10 (Docker) in progress. See `docs/PLAN.md` for full roadmap.
+Mobile-first web app for tracking daily calorie and macro intake. Users log meals manually or via AI (text/photo). Current progress: steps 0-14 done (auth, logging, day view, manual meal CRUD, AI text+vision, images, calendar view, Docker, polish). See `docs/PLAN.md` for full roadmap.
 
 ## Tech Stack
 
@@ -23,7 +23,7 @@ Mobile-first web app for tracking daily calorie and macro intake. Users log meal
   - `libsql` (default) → local encrypted SQLite
   - `pg` → PostgreSQL Flexible Server (Azure)
 - **Auth**: BetterAuth — email/password (Google OAuth deferred)
-- **AI**: Vercel AI SDK (`ai` + `@ai-sdk/openai`) — not yet implemented
+- **AI**: Vercel AI SDK (`ai` + `@ai-sdk/openai`) — text-only and multi-modal (image+text) via `generateText` with `Output.object`
 - **Logging**: Pino — structured JSON, wide-event pattern, `info` and `error` levels only
 - **Package manager**: pnpm
 
@@ -70,9 +70,11 @@ Two Vitest projects configured in `vite.config.ts`:
 
 Client tests exclude `src/lib/server/**`. Both projects exclude each other's file patterns.
 
-**Verification order (fail fast):** typecheck → lint → tests
+**Verification order (fail fast):** typecheck → lint → tests → browser test
 
 **Browser verification is mandatory for UI changes.** Passing typecheck + lint + tests is not sufficient — real bugs (e.g., sheet children not passed to Dialog.Root, `invalidate()` not triggering re-fetch) were only caught by browser testing. Use the `browser-automation` skill with a running dev server.
+
+**Browser-first implementation:** When implementing a plan that includes UI changes, browser testing must happen as part of the implementation — not deferred to the end. Start the dev server (pm2) before making changes and verify incrementally as you complete each phase. Do not mark a task complete without browser-verifying the specific UI change.
 
 ## Code Conventions
 
@@ -84,6 +86,19 @@ Client tests exclude `src/lib/server/**`. Both projects exclude each other's fil
 - Comments only for exotic functions, workarounds, complex algorithms
 - Logging: one wide event per request in `finally`, `addLogContext(locals, data)` from `$lib/server/logger` to add business context
 - Two log levels: `logger.info()` and `logger.error()`, controlled by `LOG_LEVEL` env var (`verbose`/`info`/`error`/`none`)
+
+## AI SDK Patterns
+
+Multi-modal content uses `{ type: 'file', mediaType, data }` (not `{ type: 'image' }`). Text+image messages:
+
+```ts
+messages: [{ role: 'user', content: [
+  { type: 'text', text: description },
+  { type: 'file', mediaType: 'image/jpeg', data: base64String }
+] }]
+```
+
+Always verify against Context7 API docs before implementing AI SDK features — the API evolves frequently.
 
 ## Linting & Formatting
 
@@ -114,7 +129,7 @@ Route paths: `src/lib/server/constants.ts` (`API_BASE`, `AUTH_API_ROUTE`, `AUTH_
 
 ## Dev Seed
 
-`pnpm seed:dev` creates test user (libsql only): `test@gmail.com` / `Password1`. Requires `DEV_SEED=true` in `.env`. Idempotent.
+`pnpm seed:dev` creates test user (libsql only): `test@gmail.com` / `Password1`. Requires `DEV_SEED=true` in `.env`. Idempotent. **Note:** `tsx` does not auto-load `.env` — run with `MSYS_NO_PATHCONV=1 npx tsx -r dotenv/config scripts/seed-dev.ts`.
 
 ## Environment Variables
 
@@ -176,6 +191,10 @@ taskkill //F //IM agent-browser-win32-x64.exe 2>/dev/null
 - `docs/plans/` — Detailed plans written **before** coding each step
 - `docs/stages/` — Implementation logs written **after** completing each step
 - `docs/SCHEMA.md` — Database schema reference
+
+## Post-Implementation
+
+- **Always cross off the completed step in `docs/PLAN.md`** after finishing implementation. Do not skip this.
 
 ## Commit Conventions
 
