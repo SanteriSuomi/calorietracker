@@ -1,7 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 
-	"app_name": "KaloriSeuranta",
+	"app_name": "CalorieTracker",
 
 	"layout_sign_out": "Kirjaudu ulos",
 	"layout_nav_calendar": "Kalenteri",
@@ -21,9 +21,9 @@
 	"auth_submit_sign_in": "Kirjaudu sisään",
 	"auth_submit_sign_up": "Luo tili",
 
-	"home_title": "{date} — KaloriSeuranta",
+	"home_title": "{date} — CalorieTracker",
 
-	"calendar_title": "Kalenteri — KaloriSeuranta",
+	"calendar_title": "Kalenteri — CalorieTracker",
 	"calendar_back_to_today": "← Takaisin tähän päivään",
 	"calendar_tab_grid": "Ruudukko",
 	"calendar_tab_list": "Lista",
@@ -32,7 +32,7 @@
 	"calendar_filter_placeholder": "Suodata päivämäärällä...",
 	"calendar_kcal": "{count} kcal",
 
-	"settings_title": "Asetukset — KaloriSeuranta",
+	"settings_title": "Asetukset — CalorieTracker",
 	"settings_heading": "Asetukset",
 	"settings_goals": "Tavoitteet",
 	"settings_daily_calorie_goal": "Päivittäinen kaloritavoite",

@@ -127,3 +127,18 @@
 		@apply font-sans;
 	}
 }
+
+@keyframes pulse-progress {
+	0% {
+		width: 0%;
+	}
+	50% {
+		width: 70%;
+	}
+	100% {
+		width: 90%;
+	}
+}
+.animate-pulse-progress {
+	animation: pulse-progress 2s ease-in-out infinite;
+}
