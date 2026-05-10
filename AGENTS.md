@@ -30,12 +30,12 @@ Mobile-first web app for tracking daily calorie and macro intake. Users log meal
 ## Project Structure
 
 ```
-src/lib/server/       # Server-only code (auth, db, constants, logger)
+src/lib/server/       # Server-only code (auth, db, constants, logger, storage, encryption)
 src/lib/components/   # Shared Svelte components (ui/ is shadcn-svelte generated)
 src/routes/           # SvelteKit routes (pages + API endpoints)
-src/hooks.server.ts   # Logging + auth middleware (session extraction + route guards)
+src/hooks.server.ts   # i18n + logging + auth middleware (session extraction + route guards)
 tests/                # Vitest unit & integration tests
-docs/                 # PLAN.md, step plans, stage logs, schema docs
+docs/                 # PLAN.md, SCHEMA.md, step plans, INITIAL_PLAN.md
 scripts/              # seed-dev.ts, pm2-dev.mjs
 ```
 
@@ -118,10 +118,11 @@ Drizzle configs: `drizzle.config.ts` (SQLite), `drizzle-pg.config.ts` (PG). Migr
 
 ## Auth
 
-**Middleware** (`hooks.server.ts`): `sequence(handleLogging, handleBetterAuth, handleAuthGuard)`:
-1. `handleLogging` — generates `requestId`, emits one wide event per request in `finally`
-2. `handleBetterAuth` — `auth.api.getSession()` extracts session into `event.locals`, then `svelteKitHandler` processes `/api/auth/*`
-3. `handleAuthGuard` — `/api/auth/*` passes through; `/api/*` without session → 401 JSON; page routes without session → 302 to `/auth`; `/auth` with session → 302 to `/`
+**Middleware** (`hooks.server.ts`): `sequence(handleParaglide, handleLogging, handleBetterAuth, handleAuthGuard)`:
+1. `handleParaglide` — i18n locale detection and cookie setting
+2. `handleLogging` — generates `requestId`, emits one wide event per request in `finally`
+3. `handleBetterAuth` — `auth.api.getSession()` extracts session into `event.locals`, then `svelteKitHandler` processes `/api/auth/*`
+4. `handleAuthGuard` — `/api/auth/*` passes through; `/api/*` without session → 401 JSON; page routes without session → 302 to `/auth`; `/auth` with session → 302 to `/`
 
 Route paths: `src/lib/server/constants.ts` (`API_BASE`, `AUTH_API_ROUTE`, `AUTH_PAGE_ROUTE`).
 
@@ -140,6 +141,7 @@ BETTER_AUTH_SECRET=           # >=32 chars, high entropy
 # DEV_SEED=true               # Enable seed script
 # LOG_LEVEL=info              # verbose|info|error|none
 # DATABASE_PROVIDER=libsql    # or pg
+# STORAGE_PROVIDER=local      # or azure
 ```
 
 Additional vars for future steps: `ENCRYPTION_SECRET`, `ENCRYPTION_KEY`, `AZURE_BLOB_CONNECTION_STRING`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
@@ -187,14 +189,18 @@ taskkill //F //IM agent-browser-win32-x64.exe 2>/dev/null
 
 ## Documentation
 
-- `docs/PLAN.md` — Living implementation plan with step checklist
+- `docs/PLAN.md` — **Living implementation plan** with step checklist. Must be updated when steps are completed or new steps are added.
+- `docs/SCHEMA.md` — **Living database schema reference.** Must be updated when tables, columns, indexes, or constants change.
 - `docs/plans/` — Detailed plans written **before** coding each step
-- `docs/stages/` — Implementation logs written **after** completing each step
-- `docs/SCHEMA.md` — Database schema reference
+- `docs/INITIAL_PLAN.md` — Original plan (historical reference)
+
+**Living contracts:** `PLAN.md` and `SCHEMA.md` must reflect the current codebase. When modifying database schema, API routes, or completing implementation steps, update the corresponding doc in the same commit.
 
 ## Post-Implementation
 
-- **Always cross off the completed step in `docs/PLAN.md`** after finishing implementation. Do not skip this.
+After completing any implementation:
+1. Cross off the completed step in `docs/PLAN.md`
+2. If the change modified database schema or API routes, update `docs/SCHEMA.md`
 
 ## Commit Conventions
 

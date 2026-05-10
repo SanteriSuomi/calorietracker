@@ -48,6 +48,7 @@ Index: `meal_userId_date_idx` on `(userId, date)`.
 | aiEndpointUrl    | text?                    | e.g. `https://api.openai.com/v1` |
 | aiApiKey         | text?                    | DB-level encryption covers it    |
 | aiModel          | text?                    | e.g. `gpt-4o`                    |
+| aiSystemPrompt   | text?                    | Override default AI system prompt|
 | _audit fields_   |                          |                                  |
 
 ## Constants
@@ -55,6 +56,11 @@ Index: `meal_userId_date_idx` on `(userId, date)`.
 Defined in `src/lib/server/db/shared/constants.ts`:
 
 - `DEFAULT_CALORIE_GOAL = 2000`
+- `DEFAULT_PROTEIN_GOAL = 150`
+- `DEFAULT_CARBS_GOAL = 250`
+- `DEFAULT_FAT_GOAL = 65`
+- `DEFAULT_AI_SYSTEM_PROMPT` — assertive nutrition estimation prompt
+- `AI_FORMAT_SUFFIX` — enforced JSON output format instruction (appended to system prompt)
 - `MEAL_SOURCES = ['manual', 'ai_text', 'ai_vision', 'ai_text_vision']`
 - `MealSource` type
 

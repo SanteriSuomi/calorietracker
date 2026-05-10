@@ -1,4 +1,4 @@
-# Step 15 — Settings & Calendar Improvements
+# Step 16 — Settings & Calendar Improvements
 
 > Detailed implementation plan for exposing macro goals in Settings, adding a configurable AI system prompt, reordering Settings sections, and enhancing the Calendar List view.
 

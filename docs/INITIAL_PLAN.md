@@ -1,7 +1,6 @@
 # CalorieTracker — Implementation Plan
 
 > Living document. Tracks the implementation roadmap for the CalorieTracker app.
-> See `docs/INITIAL_PLAN.md` for the original plan.
 
 ## Overview
 
@@ -17,19 +16,16 @@ Mobile-first calorie and macro tracker with AI-powered food logging via text des
 | Backend    | SvelteKit server routes (`src/routes/api/`)                                         |
 | Database   | Drizzle ORM — dual provider: libsql (self-hosted) / PostgreSQL (Azure)              |
 | Auth       | BetterAuth (email/password + optional Google OAuth)                                 |
-| AI         | Vercel AI SDK (`ai` + `@ai-sdk/openai`) + zod (output schema), user-configured endpoint |
-| i18n       | paraglide-js — compile-time, English + Finnish                                      |
+| AI         | Vercel AI SDK (`ai` + `@ai-sdk/openai`), user-configured OpenAI-compatible endpoint |
 | Logging    | Pino — structured JSON, wide-event pattern, `info`/`error` only                     |
 | Encryption | libsql `encryptionKey` (DB) + AES-256-GCM per-user (images, self-hosted)            |
-| CI/CD      | GitHub Actions                                                                      |
+| CI/CD      | Azure DevOps Pipelines                                                              |
 | Deploy     | Azure Container Apps (consumption) + self-hosted server (parallel stages)           |
 | IaC        | Bicep (idempotent, Azure-native)                                                    |
 
 ---
 
 ## Data Model
-
-See `docs/SCHEMA.md` for full schema details including column types per dialect.
 
 ### Audit Base (applied to all custom tables)
 
@@ -46,11 +42,11 @@ updatedBy  — text, not null (user id)
 
 ### Custom Tables
 
-**meal**
+**meals**
 | Column | Type | Notes |
 |---|---|---|
-| id | text (PK) | UUID via `crypto.randomUUID()` |
-| userId | text (FK → user) | Cascade delete |
+| id | uuid (PK) | |
+| userId | text (FK → user) | |
 | date | text | YYYY-MM-DD |
 | description | text | Food description |
 | calories | integer | kcal |
@@ -58,24 +54,18 @@ updatedBy  — text, not null (user id)
 | carbs | integer | grams |
 | fat | integer | grams |
 | imageFilename | text? | Encrypted image filename |
-| source | text | `"manual" \| "ai_text" \| "ai_vision" \| "ai_text_vision"` |
-| _audit fields_ | | |
-
-Index: `meal_userId_date_idx` on `(userId, date)`.
+| source | text | "manual" \| "ai*text" \| "ai_vision" \| "ai_text_vision" |
+| \_audit fields* | | |
 
 **userSettings**
 | Column | Type | Notes |
 |---|---|---|
-| id | text (PK) | UUID via `crypto.randomUUID()` |
-| userId | text (FK → user, unique) | 1:1 with user, cascade delete |
+| id | uuid (PK) | |
+| userId | text (FK → user, unique) | One settings row per user |
 | dailyCalorieGoal | integer | Default 2000 |
-| dailyProteinGoal | integer? | Default 150 |
-| dailyCarbsGoal | integer? | Default 250 |
-| dailyFatGoal | integer? | Default 65 |
-| aiEndpointUrl | text? | e.g. `https://api.openai.com/v1` |
+| aiEndpointUrl | text? | e.g. https://api.openai.com/v1 |
 | aiApiKey | text? | User's API key |
-| aiModel | text? | e.g. `gpt-4o` |
-| aiSystemPrompt | text? | Override default AI system prompt |
+| aiModel | text? | e.g. gpt-4o |
 | _audit fields_ | | |
 
 ---
@@ -102,7 +92,7 @@ Index: `meal_userId_date_idx` on `(userId, date)`.
 │  └───────────────────┘  │
 │                         │
 │ ┌─────────────────────┐ │
-│ │ [text box: describe] │ │  ← InputBar (sticky bottom)
+│ │ [text box: describe] │ │  ← AiInputBar (sticky bottom)
 │ └─────────────────────┘ │
 │  📷  [Submit to AI]  ✏️  │  ← camera / submit / manual
 │                        📅│  ← nav to calendar
@@ -118,9 +108,8 @@ Two tabs:
 
 ### Settings (`/settings`)
 
-- AI config: endpoint URL, model name, API key, system prompt
-- Daily goals: calorie, protein, carbs, fat
-- Language switcher
+- Daily calorie goal input
+- AI config: endpoint URL, model name, API key
 - Account info / sign out
 
 ### Auth (`/auth`)
@@ -139,7 +128,6 @@ Two tabs:
 | `/api/meals/[id]`            | PUT    | Update meal                          |
 | `/api/meals/[id]`            | DELETE | Delete meal                          |
 | `/api/ai/analyze`            | POST   | AI text+vision analysis → nutrition  |
-| `/api/images/upload`         | POST   | Upload image (multipart form data)   |
 | `/api/images/[filename]`     | GET    | Serve decrypted image (auth-checked) |
 | `/api/settings`              | GET    | Get user settings                    |
 | `/api/settings`              | PUT    | Update user settings                 |
@@ -148,12 +136,9 @@ Two tabs:
 
 ## Auth Middleware (`hooks.server.ts`)
 
-`sequence(handleParaglide, handleLogging, handleBetterAuth, handleAuthGuard)`:
-
-1. `handleParaglide` — i18n locale detection and cookie setting
-2. `handleLogging` — generates `requestId`, emits one wide event per request in `finally`
-3. `handleBetterAuth` — `auth.api.getSession()` extracts session into `event.locals`, then `svelteKitHandler` processes `/api/auth/*`
-4. `handleAuthGuard` — `/api/auth/*` passes through; `/api/*` without session → 401 JSON; page routes without session → 302 to `/auth`; `/auth` with session → 302 to `/`
+1. BetterAuth `svelteKitHandler` for auth routes
+2. `auth.api.getSession()` on all `/api/*` → 401 if unauthenticated
+3. Populate `event.locals.session` + `event.locals.user`
 
 ---
 
@@ -170,14 +155,15 @@ Pino with wide-event pattern in `hooks.server.ts`:
 
 ## AI Flow
 
-1. User provides text description and/or photo in InputBar
+1. User provides text description and/or photo in AiInputBar
 2. Frontend sends `{ description?, imageFile? }` to `POST /api/ai/analyze`
 3. Server reads user's AI settings from DB
 4. Creates Vercel AI SDK provider: `createOpenAI({ baseURL, apiKey })`
-5. Builds prompt with user's system prompt (or default) + format suffix
+5. Builds prompt with system instruction to return structured JSON
 6. If image: uploads to encrypted storage, sends as base64 content block
-7. Calls `generateText()` with zod output schema for structured response
-8. Returns nutrition data to frontend → saves as meal
+7. Calls `generateText()` with the model
+8. Parses `{description, calories, protein, carbs, fat}` from response
+9. Returns nutrition data to frontend → saves as meal
 
 ---
 
@@ -202,17 +188,16 @@ libsql with `encryptionKey` derived from `ENCRYPTION_SECRET` env var.
 
 ---
 
-## Dual Database & Storage Strategy
+## Dual Database Strategy
 
 |                 | Self-hosted                    | Azure                       |
 | --------------- | ------------------------------ | --------------------------- |
 | Database        | libsql (local encrypted file)  | PostgreSQL Flexible Server  |
 | Drizzle adapter | `drizzle-orm/libsql`           | `drizzle-orm/node-postgres` |
 | Images          | Local filesystem (AES-256-GCM) | Azure Blob Storage          |
-| DB switch       | `DATABASE_PROVIDER=libsql`     | `DATABASE_PROVIDER=pg`      |
-| Storage switch  | `STORAGE_PROVIDER=local`       | `STORAGE_PROVIDER=azure`    |
+| Switch          | `DATABASE_PROVIDER=libsql`     | `DATABASE_PROVIDER=pg`      |
 
-Same Drizzle schema, different adapter. Storage providers: `src/lib/server/storage/`.
+Same Drizzle schema, different adapter.
 
 ---
 
@@ -258,11 +243,10 @@ Job 3: Deploy MiniPC (on main, after build, parallel to Job 2)
 
 ```
 BETTER_AUTH_SECRET=          # >=32 chars, high entropy
-ORIGIN=                      # Public URL (BetterAuth baseURL)
+BETTER_AUTH_URL=             # Public URL
 ENCRYPTION_SECRET=           # DB + file encryption
 DATABASE_PROVIDER=libsql     # or pg
 DATABASE_URL=                # Connection string
-STORAGE_PROVIDER=local       # or azure
 ENCRYPTION_KEY=              # libsql only
 AZURE_BLOB_CONNECTION_STRING= # Azure only
 GOOGLE_CLIENT_ID=            # Optional
@@ -280,12 +264,12 @@ GOOGLE_CLIENT_SECRET=        # Optional
 - [x] 4. Logging — Pino singleton, request logging middleware in hooks
 - [x] 5. Main day view — CalorieDoughnut (Chart.js), DateNav, empty MealList
 - [x] 6. Manual meal CRUD — ManualEntrySheet, API routes, DB operations
-- [x] 7. AI integration — Settings page, Vercel AI SDK provider, analyze endpoint, InputBar
+- [x] 7. AI integration — Settings page, Vercel AI SDK provider, analyze endpoint, AiInputBar
 - [x] 8. Image handling — Upload, encrypt/decrypt (dual storage), serve with auth check
 - [x] 9. Calendar view — Month grid + list tabs, navigate to day
 - [x] 10. Docker + local dev — Dockerfile, docker-compose
-- [ ] 11. IaC — Bicep templates for Azure resources *(superseded by step 18)*
-- [ ] 12. CI/CD — Azure DevOps pipeline *(superseded by step 19)*
+- [ ] 11. IaC — Bicep templates for Azure resources *(superseded by step 17)*
+- [ ] 12. CI/CD — Azure DevOps pipeline *(superseded by step 18 — now GitHub Actions)*
 - [x] 13. Internationalization — i18n setup (paraglide), locale detection, extract all hardcoded strings to translation files, language switcher in Settings, English + Finnish
 - [x] 14. Polish — Loading states, error handling, PWA manifest. Bugfixes: title link to home, brand name not translated ("CalorieTracker"), settings page scrollbar, image+text AI input
 - [ ] 15. Password Recovery — Forgot password flow: email with reset link, reset password page. Requires email provider (Resend/SendGrid/SMTP). BetterAuth built-in email verification + password reset plugins
