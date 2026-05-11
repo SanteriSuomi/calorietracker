@@ -6,6 +6,7 @@ export interface StorageProvider {
 	save(userId: string, filename: string, data: Buffer): Promise<void>;
 	read(userId: string, filename: string): Promise<Buffer>;
 	remove(userId: string, filename: string): Promise<void>;
+	removeAll(userId: string): Promise<void>;
 }
 
 const provider = (env.STORAGE_PROVIDER as StorageProviderType) ?? 'local';

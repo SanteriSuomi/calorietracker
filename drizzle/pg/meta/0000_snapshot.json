@@ -1,5 +1,5 @@
 {
-	"id": "88c205ca-9be7-44d9-8714-213b80e03717",
+	"id": "3e9af433-1f1e-4828-897a-0acfd3154dbd",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"version": "7",
 	"dialect": "postgresql",
@@ -466,6 +466,42 @@
 				},
 				"ai_model": {
 					"name": "ai_model",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"ai_system_prompt": {
+					"name": "ai_system_prompt",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"age": {
+					"name": "age",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"weight": {
+					"name": "weight",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"height": {
+					"name": "height",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"activity_level": {
+					"name": "activity_level",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"goal": {
+					"name": "goal",
 					"type": "text",
 					"primaryKey": false,
 					"notNull": false

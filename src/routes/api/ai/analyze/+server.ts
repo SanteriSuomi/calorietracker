@@ -1,8 +1,9 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { json } from '@sveltejs/kit';
-import { generateText, NoObjectGeneratedError, Output } from 'ai';
+import { generateText } from 'ai';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { extractJsonFromResponse } from '$lib/server/ai-helpers';
 import { db } from '$lib/server/db';
 import { userSettings } from '$lib/server/db/schema';
 import { AI_FORMAT_SUFFIX, DEFAULT_AI_SYSTEM_PROMPT } from '$lib/server/db/shared/constants';
@@ -10,7 +11,12 @@ import { addLogContext } from '$lib/server/logger';
 import type { RequestHandler } from './$types';
 
 const SYSTEM_PROMPT_VISION =
-	'You are a nutrition estimation assistant. Analyze the provided food photo (and optional description) to estimate the nutritional content for a typical serving. Return a JSON object with: description (cleaned-up food name), calories (kcal), protein (grams), carbs (grams), fat (grams). All numeric values must be non-negative integers. If the input is ambiguous, estimate for a standard portion.';
+	'You are a nutrition estimation assistant. Analyze the provided food photo (and optional description) ' +
+	'to estimate the nutritional content for a typical serving.\n\n' +
+	'You MUST respond with ONLY a valid JSON object (no markdown, no explanation) with exactly these fields: ' +
+	'{ "description": string, "calories": number, "protein": number, "carbs": number, "fat": number }. ' +
+	'All numeric values must be non-negative integers. "description" must be a concise cleaned-up food name. ' +
+	'If the input is ambiguous, estimate for a standard portion.';
 
 const nutritionSchema = z.object({
 	description: z.string(),
@@ -20,15 +26,24 @@ const nutritionSchema = z.object({
 	fat: z.number().int().nonnegative()
 });
 
+const VISION_ERROR_PATTERNS = [
+	'image input is not supported',
+	'does not support image input',
+	'cannot read',
+	'multimodal',
+	'mmproj',
+	'failed to decode image'
+];
+
+function isVisionError(error: unknown): boolean {
+	const msg = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+	return VISION_ERROR_PATTERNS.some((p) => msg.includes(p));
+}
+
 async function readFileAsBase64(file: File): Promise<{ base64: string; mediaType: string }> {
 	const arrayBuffer = await file.arrayBuffer();
-	const uint8 = new Uint8Array(arrayBuffer);
-	let binary = '';
-	for (let i = 0; i < uint8.length; i++) {
-		binary += String.fromCharCode(uint8[i]);
-	}
-	const base64 = btoa(binary);
-	return { base64, mediaType: file.type || 'image/jpeg' };
+	const buffer = Buffer.from(arrayBuffer);
+	return { base64: buffer.toString('base64'), mediaType: file.type || 'image/jpeg' };
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -107,40 +122,43 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			contentParts.push({ type: 'file', mediaType, data: base64 });
 
 			aiCallParams = {
-				model: provider(settings.aiModel),
-				output: Output.object({ schema: nutritionSchema }),
+				model: provider.chat(settings.aiModel),
 				system: SYSTEM_PROMPT_VISION,
 				messages: [{ role: 'user', content: contentParts }]
 			};
 		} else {
 			aiCallParams = {
-				model: provider(settings.aiModel),
-				output: Output.object({ schema: nutritionSchema }),
+				model: provider.chat(settings.aiModel),
 				system: systemPrompt,
 				prompt: description!
 			};
 		}
 
-		const { output } = await generateText(aiCallParams);
+		const { text } = await generateText(aiCallParams);
+
+		const raw = extractJsonFromResponse(text);
+		const output = nutritionSchema.parse(raw);
 
 		addLogContext(locals, { aiSource, aiModel: settings.aiModel });
 
 		return json(output);
 	} catch (error) {
-		if (NoObjectGeneratedError.isInstance(error)) {
-			addLogContext(locals, {
-				aiSource,
-				aiModel: settings.aiModel,
-				error: 'invalid_response'
-			});
-			return json({ error: 'AI returned invalid response' }, { status: 502 });
-		}
-
 		addLogContext(locals, {
 			aiSource,
 			aiModel: settings.aiModel,
 			error: error instanceof Error ? error.message : 'unknown'
 		});
-		return json({ error: error instanceof Error ? error.message : 'AI service error' }, { status: 502 });
+
+		if (imageFile && isVisionError(error)) {
+			return json(
+				{ error: 'This model does not support image input. Try text-only description.' },
+				{ status: 502 }
+			);
+		}
+
+		return json(
+			{ error: error instanceof Error ? error.message : 'AI service error' },
+			{ status: 502 }
+		);
 	}
 };

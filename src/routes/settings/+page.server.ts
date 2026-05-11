@@ -2,7 +2,6 @@ import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { userSettings } from '$lib/server/db/schema';
 import {
-	DEFAULT_AI_SYSTEM_PROMPT,
 	DEFAULT_CALORIE_GOAL,
 	DEFAULT_CARBS_GOAL,
 	DEFAULT_FAT_GOAL,
@@ -22,6 +21,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			aiApiKey: '',
 			aiModel: '',
 			aiSystemPrompt: '',
+			age: '',
+			weight: '',
+			height: '',
+			activityLevel: '',
+			goal: '',
 			email: ''
 		};
 
@@ -41,6 +45,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		aiApiKey: row?.aiApiKey ? 'sk-****' : '',
 		aiModel: row?.aiModel ?? '',
 		aiSystemPrompt: row?.aiSystemPrompt ?? '',
+		age: row?.age?.toString() ?? '',
+		weight: row?.weight?.toString() ?? '',
+		height: row?.height?.toString() ?? '',
+		activityLevel: row?.activityLevel ?? '',
+		goal: row?.goal ?? '',
 		email: user.email
 	};
 };
