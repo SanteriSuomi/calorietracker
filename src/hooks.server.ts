@@ -100,7 +100,8 @@ const handleAuthGuard: Handle = async ({ event, resolve }) => {
 
 	const { pathname } = event.url;
 	const canonicalPath = deLocalizeUrl(event.url).pathname;
-	const isAuthPage = canonicalPath === AUTH_PAGE_ROUTE;
+	const isAuthPage =
+		canonicalPath === AUTH_PAGE_ROUTE || canonicalPath.startsWith(`${AUTH_PAGE_ROUTE}/`);
 	const isApiRoute = pathname.startsWith(API_BASE);
 
 	if (pathname.startsWith(AUTH_API_ROUTE)) {

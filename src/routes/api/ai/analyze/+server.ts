@@ -141,6 +141,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			aiModel: settings.aiModel,
 			error: error instanceof Error ? error.message : 'unknown'
 		});
-		return json({ error: 'AI service error' }, { status: 502 });
+		return json({ error: error instanceof Error ? error.message : 'AI service error' }, { status: 502 });
 	}
 };

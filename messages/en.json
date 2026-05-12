@@ -20,6 +20,11 @@
 	"auth_name_placeholder": "Your name",
 	"auth_submit_sign_in": "Sign In",
 	"auth_submit_sign_up": "Create Account",
+	"auth_email_verified": "Email verified successfully. You can now sign in.",
+	"auth_password_reset_success": "Password changed successfully. You can now sign in.",
+	"auth_email_not_verified": "Please verify your email before signing in. We've sent a new verification link to your inbox.",
+	"auth_verify_expired": "Verification link expired. Please request a new one.",
+	"auth_verify_invalid": "Invalid verification link.",
 
 	"home_title": "{date} — CalorieTracker",
 
@@ -126,5 +131,25 @@
 	"weekday_we": "We",
 	"weekday_th": "Th",
 	"weekday_fr": "Fr",
-	"weekday_sa": "Sa"
+	"weekday_sa": "Sa",
+
+	"auth_forgot_password_link": "Forgot password?",
+	"auth_forgot_password_title": "Reset Password",
+	"auth_forgot_password_heading": "Forgot your password?",
+	"auth_forgot_password_desc": "Enter your email and we'll send you a reset link.",
+	"auth_forgot_password_email_placeholder": "you@example.com",
+	"auth_forgot_password_submit": "Send Reset Link",
+	"auth_forgot_password_success": "If an account exists with that email, we've sent a reset link.",
+	"auth_forgot_password_back": "Back to sign in",
+	"auth_reset_password_title": "Set New Password — CalorieTracker",
+	"auth_reset_password_heading": "Set new password",
+	"auth_reset_password_new_password_label": "New Password",
+	"auth_reset_password_new_password_placeholder": "Min. 8 characters",
+	"auth_reset_password_confirm_label": "Confirm Password",
+	"auth_reset_password_confirm_placeholder": "Re-enter password",
+	"auth_reset_password_submit": "Reset Password",
+	"auth_reset_password_success": "Password reset successfully. You can now sign in.",
+	"auth_reset_password_invalid_token": "This reset link is invalid or has expired.",
+	"auth_reset_password_back": "Back to sign in",
+	"error_password_mismatch": "Passwords do not match"
 }

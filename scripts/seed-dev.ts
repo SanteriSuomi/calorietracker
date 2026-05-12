@@ -51,7 +51,7 @@ async function main() {
 		id: userId,
 		name: DEV_NAME,
 		email: DEV_EMAIL,
-		emailVerified: false,
+		emailVerified: true,
 		createdAt: now,
 		updatedAt: now
 	});

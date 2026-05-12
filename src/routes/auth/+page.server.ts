@@ -10,11 +10,15 @@ function localizedHome(): string {
 	return locale === 'en' ? '/' : `/${locale}/`;
 }
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	if (locals.user) {
 		return redirect(302, localizedHome());
 	}
-	return {};
+	return {
+		verified: url.searchParams.get('verified') === 'true',
+		verifyError: url.searchParams.get('error') ?? null,
+		passwordReset: url.searchParams.get('reset') === 'success'
+	};
 };
 
 export const actions: Actions = {
@@ -33,18 +37,29 @@ export const actions: Actions = {
 			});
 		} catch (error) {
 			if (error instanceof APIError) {
+				const isEmailNotVerified =
+					error.statusCode === 403 ||
+					(typeof error === 'object' && error !== null && 'statusCode' in error && (error as { statusCode: unknown }).statusCode === 403);
+				if (isEmailNotVerified) {
+					addLogContext(locals, {
+						detail: 'Sign-in blocked: email not verified',
+						authAction: 'signIn',
+						authError: 'EMAIL_NOT_VERIFIED'
+					});
+					return fail(403, { message: '', mode: 'signin', emailNotVerified: true, email });
+				}
 				addLogContext(locals, {
 					detail: `Sign-in failed: ${error.message}`,
 					authAction: 'signIn',
 					authError: error.message
 				});
-				return fail(400, { message: error.message || 'Sign in failed', mode: 'signin' });
+				return fail(400, { message: error.message || 'Sign in failed', mode: 'signin', emailNotVerified: false, email });
 			}
 			addLogContext(locals, {
 				detail: `Sign-in failed: ${error instanceof Error ? error.message : String(error)}`,
 				authAction: 'signIn'
 			});
-			return fail(500, { message: 'Unexpected error', mode: 'signin' });
+			return fail(500, { message: 'Unexpected error', mode: 'signin', emailNotVerified: false, email });
 		}
 
 		return redirect(302, localizedHome());
