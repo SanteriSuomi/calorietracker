@@ -1,30 +1,30 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-		import { Input } from '$lib/components/ui/input';
-		import { m } from '$lib/paraglide/messages';
-		import { localizeHref } from '$lib/paraglide/runtime';
-		import type { DaySummary } from '$lib/types';
-		import { formatDate } from '$lib/utils/date';
-
-		let {
-			days,
-			dailyCalorieGoal = 2000
-		}: {
-			days: DaySummary[];
-			dailyCalorieGoal?: number;
-		} = $props();
-
-		let filterText = $state('');
-
-		let filteredDays = $derived(
-			filterText.trim()
-				? days.filter(
-						(d) =>
-							d.date.includes(filterText.trim()) ||
-							formatDate(d.date).toLowerCase().includes(filterText.trim().toLowerCase())
-					)
-				: days
-		);
+			import { Input } from '$lib/components/ui/input';
+			import { m } from '$lib/paraglide/messages';
+			import { localizeHref } from '$lib/paraglide/runtime';
+			import type { DaySummary } from '$lib/types';
+			import { formatDate } from '$lib/utils/date';
+	
+			let {
+				days,
+				dailyCalorieGoal = 2000
+			}: {
+				days: DaySummary[];
+				dailyCalorieGoal?: number;
+			} = $props();
+	
+			let filterText = $state('');
+	
+			let filteredDays = $derived(
+				filterText.trim()
+					? days.filter(
+							(d) =>
+								d.date.includes(filterText.trim()) ||
+								formatDate(d.date).toLowerCase().includes(filterText.trim().toLowerCase())
+						)
+					: days
+			);
 </script>
 
 <div class="mb-3">

@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { Loader2 } from '@lucide/svelte';
-				import { enhance } from '$app/forms';
-					import { m } from '$lib/paraglide/messages';
+					import { enhance } from '$app/forms';
+						import { m } from '$lib/paraglide/messages';
+		import { localizeHref } from '$lib/paraglide/runtime';
 	
 		
 			
-					let { form } = $props();
-			
-					let mode = $state<'signin' | 'signup'>('signin');
-					let submitting = $state(false);
+				
+						let { form, data } = $props();
+				
+						let mode = $state<'signin' | 'signup'>('signin');
+						let submitting = $state(false);
 </script>
 
 <svelte:head>
@@ -25,6 +27,49 @@
 				role="alert"
 			>
 				{form.message}
+			</div>
+		{/if}
+
+		{#if form?.emailNotVerified}
+			<div
+				class="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700"
+				role="alert"
+			>
+				{m.auth_email_not_verified()}
+			</div>
+		{/if}
+
+		{#if data?.verified}
+			<div
+				class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+				role="status"
+			>
+				{m.auth_email_verified()}
+			</div>
+		{/if}
+
+		{#if data?.verifyError === 'TOKEN_EXPIRED'}
+			<div
+				class="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700"
+				role="alert"
+			>
+				{m.auth_verify_expired()}
+			</div>
+		{:else if data?.verifyError}
+			<div
+				class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+				role="alert"
+			>
+				{m.auth_verify_invalid()}
+			</div>
+		{/if}
+
+		{#if data?.passwordReset}
+			<div
+				class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+				role="status"
+			>
+				{m.auth_password_reset_success()}
 			</div>
 		{/if}
 
@@ -84,6 +129,14 @@
 								class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 								placeholder={m.auth_password_placeholder_sign_in()}
 							/>
+						</div>
+						<div class="flex justify-end">
+							<a
+								href={localizeHref('/auth/forgot-password')}
+								class="text-sm font-medium text-blue-600 hover:text-blue-500"
+							>
+								{m.auth_forgot_password_link()}
+							</a>
 						</div>
 						<button
 							type="submit"

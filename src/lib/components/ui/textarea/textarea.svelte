@@ -1,16 +1,16 @@
 <script lang="ts">
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
-		import { cn, type WithElementRef } from '$lib/utils.js';
-
-		type Props = WithElementRef<HTMLTextareaAttributes>;
-
-		let {
-			ref = $bindable(null),
-			value = $bindable(),
-			class: className,
-			'data-slot': dataSlot = 'textarea',
-			...restProps
-		}: Props = $props();
+			import { cn, type WithElementRef } from '$lib/utils.js';
+	
+			type Props = WithElementRef<HTMLTextareaAttributes>;
+	
+			let {
+				ref = $bindable(null),
+				value = $bindable(),
+				class: className,
+				'data-slot': dataSlot = 'textarea',
+				...restProps
+			}: Props = $props();
 </script>
 
 <textarea

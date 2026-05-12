@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
-				import { Button } from '$lib/components/ui/button';
-				import { localizeHref } from '$lib/paraglide/runtime';
+					import { Button } from '$lib/components/ui/button';
+					import { localizeHref } from '$lib/paraglide/runtime';
 </script>
 
 <svelte:head>

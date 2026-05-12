@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-tmp=$(mktemp)
-agent-browser "$@" > "$tmp" 2>&1 < /dev/null
-cat "$tmp"
-rm -f "$tmp"

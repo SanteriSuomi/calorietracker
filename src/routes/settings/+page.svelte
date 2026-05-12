@@ -1,112 +1,112 @@
 <script lang="ts">
 	import { ArrowLeft } from '@lucide/svelte';
-			import { invalidateAll } from '$app/navigation';
-			import { page } from '$app/state';
-			import { authClient } from '$lib/auth-client';
-			import { Button } from '$lib/components/ui/button';
-			import { Input } from '$lib/components/ui/input';
-			import { Label } from '$lib/components/ui/label';
-			import { Separator } from '$lib/components/ui/separator';
-			import { Textarea } from '$lib/components/ui/textarea';
-			import { m } from '$lib/paraglide/messages';
-			import { locales, localizeHref } from '$lib/paraglide/runtime';
-			import type { PageData } from './$types';
-
-			let { data }: { data: PageData } = $props();
-
-			let dailyCalorieGoal = $state(data.dailyCalorieGoal.toString());
-			let proteinGoal = $state(data.dailyProteinGoal.toString());
-			let carbsGoal = $state(data.dailyCarbsGoal.toString());
-			let fatGoal = $state(data.dailyFatGoal.toString());
-			let aiEndpointUrl = $state(data.aiEndpointUrl);
-			let aiApiKey = $state(data.aiApiKey);
-			let aiModel = $state(data.aiModel);
-			let aiSystemPrompt = $state(data.aiSystemPrompt);
-			let saving = $state(false);
-			let errors = $state<Record<string, string>>({});
-			let success = $state(false);
-
-			function validateNonNegInt(val: string): boolean {
-				if (val === '') return true;
-				const n = Number.parseInt(val, 10);
-				return Number.isInteger(n) && n >= 0;
-			}
-
-			function validate(): Record<string, string> {
-				const errs: Record<string, string> = {};
-				const goal = Number.parseInt(dailyCalorieGoal, 10);
-				if (dailyCalorieGoal === '' || !Number.isInteger(goal) || goal < 0) {
-					errs.dailyCalorieGoal = 'Must be a non-negative integer';
+				import { invalidateAll } from '$app/navigation';
+				import { page } from '$app/state';
+				import { authClient } from '$lib/auth-client';
+				import { Button } from '$lib/components/ui/button';
+				import { Input } from '$lib/components/ui/input';
+				import { Label } from '$lib/components/ui/label';
+				import { Separator } from '$lib/components/ui/separator';
+				import { Textarea } from '$lib/components/ui/textarea';
+				import { m } from '$lib/paraglide/messages';
+				import { locales, localizeHref } from '$lib/paraglide/runtime';
+				import type { PageData } from './$types';
+	
+				let { data }: { data: PageData } = $props();
+	
+				let dailyCalorieGoal = $state(data.dailyCalorieGoal.toString());
+				let proteinGoal = $state(data.dailyProteinGoal.toString());
+				let carbsGoal = $state(data.dailyCarbsGoal.toString());
+				let fatGoal = $state(data.dailyFatGoal.toString());
+				let aiEndpointUrl = $state(data.aiEndpointUrl);
+				let aiApiKey = $state(data.aiApiKey);
+				let aiModel = $state(data.aiModel);
+				let aiSystemPrompt = $state(data.aiSystemPrompt);
+				let saving = $state(false);
+				let errors = $state<Record<string, string>>({});
+				let success = $state(false);
+	
+				function validateNonNegInt(val: string): boolean {
+					if (val === '') return true;
+					const n = Number.parseInt(val, 10);
+					return Number.isInteger(n) && n >= 0;
 				}
-				if (!validateNonNegInt(proteinGoal)) {
-					errs.proteinGoal = 'Must be a non-negative integer';
+	
+				function validate(): Record<string, string> {
+					const errs: Record<string, string> = {};
+					const goal = Number.parseInt(dailyCalorieGoal, 10);
+					if (dailyCalorieGoal === '' || !Number.isInteger(goal) || goal < 0) {
+						errs.dailyCalorieGoal = 'Must be a non-negative integer';
+					}
+					if (!validateNonNegInt(proteinGoal)) {
+						errs.proteinGoal = 'Must be a non-negative integer';
+					}
+					if (!validateNonNegInt(carbsGoal)) {
+						errs.carbsGoal = 'Must be a non-negative integer';
+					}
+					if (!validateNonNegInt(fatGoal)) {
+						errs.fatGoal = 'Must be a non-negative integer';
+					}
+					if (aiEndpointUrl && !/^https?:\/\/.+/.test(aiEndpointUrl)) {
+						errs.aiEndpointUrl = 'Must be a valid URL (http:// or https://)';
+					}
+					if (aiSystemPrompt && aiSystemPrompt.length > 2000) {
+						errs.aiSystemPrompt = 'Must be at most 2000 characters';
+					}
+					return errs;
 				}
-				if (!validateNonNegInt(carbsGoal)) {
-					errs.carbsGoal = 'Must be a non-negative integer';
+	
+				function parseOptionalInt(val: string): number | null {
+					if (val === '') return null;
+					const n = Number.parseInt(val, 10);
+					return Number.isInteger(n) && n >= 0 ? n : null;
 				}
-				if (!validateNonNegInt(fatGoal)) {
-					errs.fatGoal = 'Must be a non-negative integer';
-				}
-				if (aiEndpointUrl && !/^https?:\/\/.+/.test(aiEndpointUrl)) {
-					errs.aiEndpointUrl = 'Must be a valid URL (http:// or https://)';
-				}
-				if (aiSystemPrompt && aiSystemPrompt.length > 2000) {
-					errs.aiSystemPrompt = 'Must be at most 2000 characters';
-				}
-				return errs;
-			}
-
-			function parseOptionalInt(val: string): number | null {
-				if (val === '') return null;
-				const n = Number.parseInt(val, 10);
-				return Number.isInteger(n) && n >= 0 ? n : null;
-			}
-
-			async function handleSave() {
-				errors = {};
-				success = false;
-				const errs = validate();
-				if (Object.keys(errs).length > 0) {
-					errors = errs;
-					return;
-				}
-
-				saving = true;
-				try {
-					const res = await fetch('/api/settings', {
-						method: 'PUT',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							dailyCalorieGoal: Number.parseInt(dailyCalorieGoal, 10),
-							dailyProteinGoal: parseOptionalInt(proteinGoal),
-							dailyCarbsGoal: parseOptionalInt(carbsGoal),
-							dailyFatGoal: parseOptionalInt(fatGoal),
-							aiEndpointUrl: aiEndpointUrl || null,
-							aiApiKey: aiApiKey || null,
-							aiModel: aiModel || null,
-							aiSystemPrompt: aiSystemPrompt || null
-						})
-					});
-
-					if (!res.ok) {
-						const err = await res.json();
-						errors.form = err.error || m.error_save_settings();
+	
+				async function handleSave() {
+					errors = {};
+					success = false;
+					const errs = validate();
+					if (Object.keys(errs).length > 0) {
+						errors = errs;
 						return;
 					}
-
-					success = true;
-					await invalidateAll();
-				} catch {
-					errors.form = m.error_network();
-				} finally {
-					saving = false;
+	
+					saving = true;
+					try {
+						const res = await fetch('/api/settings', {
+							method: 'PUT',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({
+								dailyCalorieGoal: Number.parseInt(dailyCalorieGoal, 10),
+								dailyProteinGoal: parseOptionalInt(proteinGoal),
+								dailyCarbsGoal: parseOptionalInt(carbsGoal),
+								dailyFatGoal: parseOptionalInt(fatGoal),
+								aiEndpointUrl: aiEndpointUrl || null,
+								aiApiKey: aiApiKey || null,
+								aiModel: aiModel || null,
+								aiSystemPrompt: aiSystemPrompt || null
+							})
+						});
+	
+						if (!res.ok) {
+							const err = await res.json();
+							errors.form = err.error || m.error_save_settings();
+							return;
+						}
+	
+						success = true;
+						await invalidateAll();
+					} catch {
+						errors.form = m.error_network();
+					} finally {
+						saving = false;
+					}
 				}
-			}
-
-			async function handleSignOut() {
-				await authClient.signOut();
-				window.location.href = localizeHref('/');
-			}
+	
+				async function handleSignOut() {
+					await authClient.signOut();
+					window.location.href = localizeHref('/');
+				}
 </script>
 
 <svelte:head>

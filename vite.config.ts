@@ -2,11 +2,24 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { playwright } from '@vitest/browser-playwright';
-import { defineConfig } from 'vitest/config';
+import { defineConfig, type Plugin } from 'vitest/config';
+
+function autoOrigin(): Plugin {
+	return {
+		name: 'auto-origin',
+		configureServer(server) {
+			if (!process.env.ORIGIN) {
+				const port = server.config.server.port ?? 5173;
+				process.env.ORIGIN = `http://localhost:${port}`;
+			}
+		}
+	};
+}
 
 export default defineConfig({
 	ssr: { external: ['@libsql/client'] },
 	plugins: [
+		autoOrigin(),
 		tailwindcss(),
 		sveltekit(),
 		paraglideVitePlugin({

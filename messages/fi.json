@@ -20,6 +20,11 @@
 	"auth_name_placeholder": "Nimesi",
 	"auth_submit_sign_in": "Kirjaudu sisään",
 	"auth_submit_sign_up": "Luo tili",
+	"auth_email_verified": "Sähköposti vahvistettu. Voit nyt kirjautua sisään.",
+	"auth_password_reset_success": "Salasana vaihdettu. Voit nyt kirjautua sisään.",
+	"auth_email_not_verified": "Vahvista sähköpostiosoitteesi ennen kirjautumista. Olemme lähettäneet uuden vahvistuslinkin sähköpostiisi.",
+	"auth_verify_expired": "Vahvistuslinkki on vanhentunut. Pyydä uusi linkki.",
+	"auth_verify_invalid": "Virheellinen vahvistuslinkki.",
 
 	"home_title": "{date} — CalorieTracker",
 
@@ -126,5 +131,25 @@
 	"weekday_we": "Ke",
 	"weekday_th": "To",
 	"weekday_fr": "Pe",
-	"weekday_sa": "La"
+	"weekday_sa": "La",
+
+	"auth_forgot_password_link": "Unohditko salasanan?",
+	"auth_forgot_password_title": "Palauta salasana",
+	"auth_forgot_password_heading": "Unohditko salasanasi?",
+	"auth_forgot_password_desc": "Syötä sähköpostiosoitteesi ja lähetämme palautuslinkin.",
+	"auth_forgot_password_email_placeholder": "sinä@esimerkki.fi",
+	"auth_forgot_password_submit": "Lähetä palautuslinkki",
+	"auth_forgot_password_success": "Jos tili on olemassa kyseisellä sähköpostilla, olemme lähettäneet palautuslinkin.",
+	"auth_forgot_password_back": "Takaisin kirjautumiseen",
+	"auth_reset_password_title": "Aseta uusi salasana — CalorieTracker",
+	"auth_reset_password_heading": "Aseta uusi salasana",
+	"auth_reset_password_new_password_label": "Uusi salasana",
+	"auth_reset_password_new_password_placeholder": "Väh. 8 merkkiä",
+	"auth_reset_password_confirm_label": "Vahvista salasana",
+	"auth_reset_password_confirm_placeholder": "Syötä salasana uudelleen",
+	"auth_reset_password_submit": "Palauta salasana",
+	"auth_reset_password_success": "Salasana palautettu onnistuneesti. Voit nyt kirjautua sisään.",
+	"auth_reset_password_invalid_token": "Tämä palautuslinkki on virheellinen tai vanhentunut.",
+	"auth_reset_password_back": "Takaisin kirjautumiseen",
+	"error_password_mismatch": "Salasanat eivät täsmää"
 }

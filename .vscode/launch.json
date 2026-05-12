@@ -1,0 +1,23 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Debug Dev Server",
+			"type": "node-terminal",
+			"request": "launch",
+			"command": "pnpm dev",
+			"serverReadyAction": {
+				"pattern": "- Local:.+(https?://.+)",
+				"uriFormat": "%s",
+				"action": "openExternally"
+			}
+		},
+		{
+			"name": "Debug Client (Chrome)",
+			"type": "chrome",
+			"request": "launch",
+			"url": "http://localhost:5173",
+			"webRoot": "${workspaceFolder}"
+		}
+	]
+}

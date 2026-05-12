@@ -1,40 +1,41 @@
 <script lang="ts">
 	import { Loader2, Pencil, Trash2 } from '@lucide/svelte';
-					import { Badge } from '$lib/components/ui/badge';
-					import * as Card from '$lib/components/ui/card';
-					import { m } from '$lib/paraglide/messages';
+						import { Badge } from '$lib/components/ui/badge';
+						import * as Card from '$lib/components/ui/card';
+						import { m } from '$lib/paraglide/messages';
 	
 		
 			
 				
-				
+					
 					
 						
-							let {
-								description,
-								calories,
-								protein,
-								carbs,
-								fat,
-								imageFilename,
-								deleting = false,
-								onEdit,
-								onDelete
-							}: {
-								description: string;
-								calories: number;
-								protein: number;
-								carbs: number;
-								fat: number;
-								imageFilename?: string | null;
-								deleting?: boolean;
-								onEdit?: () => void;
-								onDelete?: () => void;
-							} = $props();
-						
-					function handleDelete() {
-						if (onDelete && confirm(m.meal_delete_confirm())) onDelete();
-					}
+							
+								let {
+									description,
+									calories,
+									protein,
+									carbs,
+									fat,
+									imageFilename,
+									deleting = false,
+									onEdit,
+									onDelete
+								}: {
+									description: string;
+									calories: number;
+									protein: number;
+									carbs: number;
+									fat: number;
+									imageFilename?: string | null;
+									deleting?: boolean;
+									onEdit?: () => void;
+									onDelete?: () => void;
+								} = $props();
+							
+						function handleDelete() {
+							if (onDelete && confirm(m.meal_delete_confirm())) onDelete();
+						}
 </script>
 
 <Card.Content class="py-3 px-4">

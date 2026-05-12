@@ -13,7 +13,7 @@ All custom tables include audit columns via `auditColumns()` helper:
 
 ## BetterAuth Tables (auto-generated)
 
-`user`, `session`, `account`, `verification` — defined in both `src/lib/server/db/sqlite/schema.ts` and `src/lib/server/db/pg/schema.ts`.
+`user`, `session`, `account`, `verification` — defined in both `src/lib/server/db/sqlite/schema.ts` and `src/lib/server/db/pg/schema.ts`. The `verification` table is used by BetterAuth for email verification tokens and password reset tokens.
 
 ## Custom Tables
 
