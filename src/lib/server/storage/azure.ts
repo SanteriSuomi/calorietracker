@@ -37,4 +37,13 @@ export default class AzureStorage implements StorageProvider {
 		const blob = container.getBlockBlobClient(`${userId}/${filename}`);
 		await blob.deleteIfExists();
 	}
+
+	async removeAll(userId: string): Promise<void> {
+		const client = getClient();
+		const container = client.getContainerClient(CONTAINER_NAME);
+		for await (const blob of container.listBlobsFlat({ prefix: `${userId}/` })) {
+			const blockBlob = container.getBlockBlobClient(blob.name);
+			await blockBlob.deleteIfExists();
+		}
+	}
 }

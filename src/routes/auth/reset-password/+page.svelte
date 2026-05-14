@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { Loader2 } from '@lucide/svelte';
-		import { enhance } from '$app/forms';
-		import { m } from '$lib/paraglide/messages';
-		import { localizeHref } from '$lib/paraglide/runtime';
-
-		let { form, data } = $props();
-		let submitting = $state(false);
-
-		let hasToken = $derived(!!data?.token);
+								import { enhance } from '$app/forms';
+								import { m } from '$lib/paraglide/messages';
+								import { localizeHref } from '$lib/paraglide/runtime';
+	
+		
+			
+				
+					
+						
+								let { form, data } = $props();
+								let submitting = $state(false);
+						
+								let hasToken = $derived(!!data?.token);
 </script>
 
 <svelte:head>

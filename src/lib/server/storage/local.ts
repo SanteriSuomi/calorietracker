@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { decrypt, deriveUserKey, encrypt } from '../encryption';
 import type { StorageProvider } from './index';
@@ -25,5 +25,10 @@ export default class LocalStorage implements StorageProvider {
 	async remove(userId: string, filename: string): Promise<void> {
 		const path = join(BASE_DIR, userId, `${filename}.enc`);
 		if (existsSync(path)) await unlink(path);
+	}
+
+	async removeAll(userId: string): Promise<void> {
+		const dir = join(BASE_DIR, userId);
+		if (existsSync(dir)) await rm(dir, { recursive: true, force: true });
 	}
 }

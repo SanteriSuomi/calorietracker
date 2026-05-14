@@ -216,7 +216,7 @@ describe('PUT /api/meals/[id] — updates', () => {
 		const [meal] = await db.select().from(schema.meal).where(eq(schema.meal.id, mealId));
 
 		expect(meal.updatedAt).toBeInstanceOf(Date);
-		expect(meal.updatedAt!.getTime()).toBeGreaterThan(beforeUpdate.getTime());
+		expect(meal.updatedAt?.getTime()).toBeGreaterThan(beforeUpdate.getTime());
 		expect(meal.updatedBy).toBe(TEST_USER_ID);
 	});
 });

@@ -17,38 +17,38 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {};
 };
 
-	function serializeError(error: unknown): string {
-		if (error instanceof Error) return error.message;
-		if (typeof error === 'object' && error !== null) {
-			const obj = error as Record<string, unknown>;
-			if (typeof obj.message === 'string') return obj.message;
-			return JSON.stringify(error);
-		}
-		return String(error);
+function serializeError(error: unknown): string {
+	if (error instanceof Error) return error.message;
+	if (typeof error === 'object' && error !== null) {
+		const obj = error as Record<string, unknown>;
+		if (typeof obj.message === 'string') return obj.message;
+		return JSON.stringify(error);
 	}
+	return String(error);
+}
 
-	export const actions: Actions = {
-		requestReset: async ({ request, locals, url }) => {
-			const formData = await request.formData();
-			const email = formData.get('email')?.toString() ?? '';
+export const actions: Actions = {
+	requestReset: async ({ request, locals, url }) => {
+		const formData = await request.formData();
+		const email = formData.get('email')?.toString() ?? '';
 
-			const redirectTo = `${env.ORIGIN || url.origin}/auth/reset-password`;
+		const redirectTo = `${env.ORIGIN || url.origin}/auth/reset-password`;
 
-			try {
-				await auth.api.requestPasswordReset({
-					body: { email, redirectTo }
-				});
-				addLogContext(locals, {
-					detail: 'Password reset requested',
-					authAction: 'requestPasswordReset'
-				});
-			} catch (error) {
-				addLogContext(locals, {
-					detail: `Password reset request failed: ${serializeError(error)}`,
-					authAction: 'requestPasswordReset'
-				});
-			}
-
-			return { success: true };
+		try {
+			await auth.api.requestPasswordReset({
+				body: { email, redirectTo }
+			});
+			addLogContext(locals, {
+				detail: 'Password reset requested',
+				authAction: 'requestPasswordReset'
+			});
+		} catch (error) {
+			addLogContext(locals, {
+				detail: `Password reset request failed: ${serializeError(error)}`,
+				authAction: 'requestPasswordReset'
+			});
 		}
-	} satisfies Actions;
+
+		return { success: true };
+	}
+} satisfies Actions;

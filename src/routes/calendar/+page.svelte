@@ -1,35 +1,35 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-				import CalendarGrid from '$lib/components/CalendarGrid.svelte';
-				import CalendarList from '$lib/components/CalendarList.svelte';
-				import * as Tabs from '$lib/components/ui/tabs';
-				import { m } from '$lib/paraglide/messages';
-				import { localizeHref } from '$lib/paraglide/runtime';
-				import { addMonths, today } from '$lib/utils/date';
-				import type { PageData } from './$types';
-	
-				let { data }: { data: PageData } = $props();
-	
-				let activeTab = $state('grid');
-				let currentMonth = $state(data.currentMonth);
-	
-				$effect(() => {
-					currentMonth = data.currentMonth;
-				});
-	
-				const todayMonth = $derived(today().slice(0, 7));
-	
-				function handlePrevMonth() {
-					currentMonth = addMonths(`${currentMonth}-01`, -1).slice(0, 7);
-					goto(`?month=${currentMonth}`);
-				}
-	
-				function handleNextMonth() {
-					const next = addMonths(`${currentMonth}-01`, 1).slice(0, 7);
-					if (next > todayMonth) return;
-					currentMonth = next;
-					goto(`?month=${currentMonth}`);
-				}
+	import CalendarGrid from '$lib/components/CalendarGrid.svelte';
+	import CalendarList from '$lib/components/CalendarList.svelte';
+	import * as Tabs from '$lib/components/ui/tabs';
+	import { m } from '$lib/paraglide/messages';
+	import { localizeHref } from '$lib/paraglide/runtime';
+	import { addMonths, today } from '$lib/utils/date';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
+
+	let activeTab = $state('grid');
+	let currentMonth = $state('');
+
+	$effect(() => {
+		currentMonth = data.currentMonth;
+	});
+
+	const todayMonth = $derived(today().slice(0, 7));
+
+	function handlePrevMonth() {
+		currentMonth = addMonths(`${currentMonth}-01`, -1).slice(0, 7);
+		goto(`?month=${currentMonth}`);
+	}
+
+	function handleNextMonth() {
+		const next = addMonths(`${currentMonth}-01`, 1).slice(0, 7);
+		if (next > todayMonth) return;
+		currentMonth = next;
+		goto(`?month=${currentMonth}`);
+	}
 </script>
 
 <svelte:head>

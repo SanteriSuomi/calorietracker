@@ -1,16 +1,22 @@
 <script lang="ts">
 	import { Loader2 } from '@lucide/svelte';
-					import { enhance } from '$app/forms';
-						import { m } from '$lib/paraglide/messages';
-		import { localizeHref } from '$lib/paraglide/runtime';
+											import { enhance } from '$app/forms';
+												import { m } from '$lib/paraglide/messages';
+								import { localizeHref } from '$lib/paraglide/runtime';
 	
 		
 			
 				
-						let { form, data } = $props();
-				
-						let mode = $state<'signin' | 'signup'>('signin');
-						let submitting = $state(false);
+					
+						
+							
+								
+									
+										
+												let { form, data } = $props();
+										
+												let mode = $state<'signin' | 'signup'>('signin');
+												let submitting = $state(false);
 </script>
 
 <svelte:head>

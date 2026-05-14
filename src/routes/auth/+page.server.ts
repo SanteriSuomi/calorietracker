@@ -39,7 +39,10 @@ export const actions: Actions = {
 			if (error instanceof APIError) {
 				const isEmailNotVerified =
 					error.statusCode === 403 ||
-					(typeof error === 'object' && error !== null && 'statusCode' in error && (error as { statusCode: unknown }).statusCode === 403);
+					(typeof error === 'object' &&
+						error !== null &&
+						'statusCode' in error &&
+						(error as { statusCode: unknown }).statusCode === 403);
 				if (isEmailNotVerified) {
 					addLogContext(locals, {
 						detail: 'Sign-in blocked: email not verified',
@@ -53,13 +56,23 @@ export const actions: Actions = {
 					authAction: 'signIn',
 					authError: error.message
 				});
-				return fail(400, { message: error.message || 'Sign in failed', mode: 'signin', emailNotVerified: false, email });
+				return fail(400, {
+					message: error.message || 'Sign in failed',
+					mode: 'signin',
+					emailNotVerified: false,
+					email
+				});
 			}
 			addLogContext(locals, {
 				detail: `Sign-in failed: ${error instanceof Error ? error.message : String(error)}`,
 				authAction: 'signIn'
 			});
-			return fail(500, { message: 'Unexpected error', mode: 'signin', emailNotVerified: false, email });
+			return fail(500, {
+				message: 'Unexpected error',
+				mode: 'signin',
+				emailNotVerified: false,
+				email
+			});
 		}
 
 		return redirect(302, localizedHome());

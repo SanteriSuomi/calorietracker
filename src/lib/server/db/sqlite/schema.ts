@@ -157,6 +157,11 @@ export const userSettings = sqliteTable('user_settings', {
 	aiApiKey: text('ai_api_key'),
 	aiModel: text('ai_model'),
 	aiSystemPrompt: text('ai_system_prompt'),
+	age: integer('age'),
+	weight: integer('weight'),
+	height: integer('height'),
+	activityLevel: text('activity_level'),
+	goal: text('goal'),
 	...auditColumns()
 });
 

@@ -9,13 +9,16 @@ import type { RequestHandler } from './$types';
 const MASKED_KEY = 'sk-****';
 const MAX_PROMPT_LENGTH = 2000;
 
+const ACTIVITY_LEVELS = ['sedentary', 'light', 'moderate', 'active', 'very_active'] as const;
+const GOALS = ['lose', 'maintain', 'gain'] as const;
+
 function maskApiKey(key: string | null): string | null {
 	if (!key) return null;
 	if (key.length <= 6) return MASKED_KEY;
 	return `${key.slice(0, 3)}...${key.slice(-4)}`;
 }
 
-function validateNonNegativeInt(value: unknown, fieldName: string): number | null | undefined {
+function validateNonNegativeInt(value: unknown, _fieldName: string): number | null | undefined {
 	if (value === undefined) return undefined;
 	if (value === null) return null;
 	if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) return undefined;
@@ -42,7 +45,12 @@ export const GET: RequestHandler = async ({ locals }) => {
 			aiEndpointUrl: null,
 			aiApiKey: null,
 			aiModel: null,
-			aiSystemPrompt: null
+			aiSystemPrompt: null,
+			age: null,
+			weight: null,
+			height: null,
+			activityLevel: null,
+			goal: null
 		});
 	}
 
@@ -56,7 +64,12 @@ export const GET: RequestHandler = async ({ locals }) => {
 		aiEndpointUrl: row.aiEndpointUrl,
 		aiApiKey: maskApiKey(row.aiApiKey),
 		aiModel: row.aiModel,
-		aiSystemPrompt: row.aiSystemPrompt
+		aiSystemPrompt: row.aiSystemPrompt,
+		age: row.age,
+		weight: row.weight,
+		height: row.height,
+		activityLevel: row.activityLevel,
+		goal: row.goal
 	});
 };
 
@@ -69,6 +82,11 @@ interface SettingsBody {
 	aiApiKey?: unknown;
 	aiModel?: unknown;
 	aiSystemPrompt?: unknown;
+	age?: unknown;
+	weight?: unknown;
+	height?: unknown;
+	activityLevel?: unknown;
+	goal?: unknown;
 }
 
 export const PUT: RequestHandler = async ({ request, locals }) => {
@@ -162,6 +180,57 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 		}
 	}
 
+	if (parsed.age !== undefined && parsed.age !== null) {
+		if (
+			typeof parsed.age !== 'number' ||
+			!Number.isInteger(parsed.age) ||
+			parsed.age < 10 ||
+			parsed.age > 120
+		) {
+			return json({ error: 'age must be an integer between 10 and 120' }, { status: 400 });
+		}
+	}
+
+	if (parsed.weight !== undefined && parsed.weight !== null) {
+		if (
+			typeof parsed.weight !== 'number' ||
+			!Number.isInteger(parsed.weight) ||
+			parsed.weight < 20 ||
+			parsed.weight > 500
+		) {
+			return json({ error: 'weight must be an integer between 20 and 500' }, { status: 400 });
+		}
+	}
+
+	if (parsed.height !== undefined && parsed.height !== null) {
+		if (
+			typeof parsed.height !== 'number' ||
+			!Number.isInteger(parsed.height) ||
+			parsed.height < 50 ||
+			parsed.height > 300
+		) {
+			return json({ error: 'height must be an integer between 50 and 300' }, { status: 400 });
+		}
+	}
+
+	if (parsed.activityLevel !== undefined && parsed.activityLevel !== null) {
+		if (
+			typeof parsed.activityLevel !== 'string' ||
+			!ACTIVITY_LEVELS.includes(parsed.activityLevel as (typeof ACTIVITY_LEVELS)[number])
+		) {
+			return json(
+				{ error: 'activityLevel must be one of: sedentary, light, moderate, active, very_active' },
+				{ status: 400 }
+			);
+		}
+	}
+
+	if (parsed.goal !== undefined && parsed.goal !== null) {
+		if (typeof parsed.goal !== 'string' || !GOALS.includes(parsed.goal as (typeof GOALS)[number])) {
+			return json({ error: 'goal must be one of: lose, maintain, gain' }, { status: 400 });
+		}
+	}
+
 	const existing = await db
 		.select({ id: userSettings.id, aiApiKey: userSettings.aiApiKey })
 		.from(userSettings)
@@ -206,6 +275,20 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 			? null
 			: ((parsed.aiSystemPrompt as string | undefined) ?? null);
 
+	const age = parsed.age === null ? null : (validateNonNegativeInt(parsed.age, 'age') ?? undefined);
+	const weight =
+		parsed.weight === null ? null : (validateNonNegativeInt(parsed.weight, 'weight') ?? undefined);
+	const height =
+		parsed.height === null ? null : (validateNonNegativeInt(parsed.height, 'height') ?? undefined);
+	const activityLevel =
+		parsed.activityLevel === '' || parsed.activityLevel === null
+			? null
+			: ((parsed.activityLevel as string | undefined) ?? null);
+	const profileGoal =
+		parsed.goal === '' || parsed.goal === null
+			? null
+			: ((parsed.goal as string | undefined) ?? null);
+
 	if (existing.length > 0) {
 		await db
 			.update(userSettings)
@@ -218,6 +301,11 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 				aiApiKey: apiKey,
 				aiModel: model,
 				aiSystemPrompt: systemPrompt,
+				age: age ?? undefined,
+				weight: weight ?? undefined,
+				height: height ?? undefined,
+				activityLevel,
+				goal: profileGoal,
 				updatedAt: new Date(),
 				updatedBy: user.id
 			})
@@ -233,6 +321,11 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 			aiApiKey: apiKey,
 			aiModel: model,
 			aiSystemPrompt: systemPrompt,
+			age: age ?? null,
+			weight: weight ?? null,
+			height: height ?? null,
+			activityLevel,
+			goal: profileGoal,
 			createdBy: user.id,
 			updatedBy: user.id
 		});
@@ -248,6 +341,11 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 		aiEndpointUrl: endpointUrl,
 		aiApiKey: maskApiKey(apiKey),
 		aiModel: model,
-		aiSystemPrompt: systemPrompt
+		aiSystemPrompt: systemPrompt,
+		age: age ?? null,
+		weight: weight ?? null,
+		height: height ?? null,
+		activityLevel,
+		goal: profileGoal
 	});
 };

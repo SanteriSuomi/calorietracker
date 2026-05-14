@@ -49,6 +49,11 @@ Index: `meal_userId_date_idx` on `(userId, date)`.
 | aiApiKey         | text?                    | DB-level encryption covers it    |
 | aiModel          | text?                    | e.g. `gpt-4o`                    |
 | aiSystemPrompt   | text?                    | Override default AI system prompt|
+| age              | integer?                 | Years (10-120)                   |
+| weight           | integer?                 | kg (20-500)                      |
+| height           | integer?                 | cm (50-300)                      |
+| activityLevel    | text?                    | `sedentary` \| `light` \| `moderate` \| `active` \| `very_active` |
+| goal             | text?                    | `lose` \| `maintain` \| `gain`  |
 | _audit fields_   |                          |                                  |
 
 ## Constants
@@ -63,6 +68,13 @@ Defined in `src/lib/server/db/shared/constants.ts`:
 - `AI_FORMAT_SUFFIX` — enforced JSON output format instruction (appended to system prompt)
 - `MEAL_SOURCES = ['manual', 'ai_text', 'ai_vision', 'ai_text_vision']`
 - `MealSource` type
+
+## API Routes (Step 17 additions)
+
+| Endpoint                       | Method | Purpose                                    |
+| ------------------------------ | ------ | ------------------------------------------ |
+| `/api/ai/estimate-goals`       | POST   | AI goal estimation from user profile       |
+| `/api/account/delete`          | POST   | Delete account and all user data (cascade) |
 
 ## Relations
 

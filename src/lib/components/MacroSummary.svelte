@@ -1,22 +1,22 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge';
-			import { m } from '$lib/paraglide/messages';
-	
-			let {
-				protein,
-				carbs,
-				fat,
-				proteinGoal = null,
-				carbsGoal = null,
-				fatGoal = null
-			}: {
-				protein: number;
-				carbs: number;
-				fat: number;
-				proteinGoal?: number | null;
-				carbsGoal?: number | null;
-				fatGoal?: number | null;
-			} = $props();
+	import { m } from '$lib/paraglide/messages';
+
+	let {
+		protein,
+		carbs,
+		fat,
+		proteinGoal = null,
+		carbsGoal = null,
+		fatGoal = null
+	}: {
+		protein: number;
+		carbs: number;
+		fat: number;
+		proteinGoal?: number | null;
+		carbsGoal?: number | null;
+		fatGoal?: number | null;
+	} = $props();
 </script>
 
 <div class="flex justify-around py-2">
