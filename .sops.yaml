@@ -1,0 +1,16 @@
+keys:
+  - &admin age12xun002hsrjal5gpdms39h0pawpda9qkhfjt78jgaxrww49dsf8sdljsdu
+
+creation_rules:
+  - path_regex: ^infra[/\\]secrets[/\\].*$
+    key_groups:
+      - age:
+          - *admin
+  - path_regex: ^infra[/\\]terraform[/\\]terraform\.tfvars$
+    key_groups:
+      - age:
+          - *admin
+  - path_regex: ^infra[/\\]ansible[/\\]group_vars[/\\].*\.yml$
+    key_groups:
+      - age:
+          - *admin

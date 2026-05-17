@@ -1,0 +1,10 @@
+azure_location                = "swedencentral"
+azure_resource_group_name     = "rg-calorietracker"
+cloudflare_zone_id            = "your-cloudflare-zone-id"
+cloudflare_domain             = "calorietracker.dev"
+ghcr_image                    = "ghcr.io/santerisuomi/calorietracker:latest"
+ghcr_username                 = "SanteriSuomi"
+db_admin_password             = "change-me-to-a-strong-password"
+budget_notification_emails    = ["you@example.com"]
+grafana_cloud_stack_name      = "calorietracker"
+grafana_cloud_region_slug     = "prod_us_east_0"

@@ -1,0 +1,9 @@
+:8529 {
+	@canonical host {{ tailscale_hostname }}.{{ tailscale_tailnet }}.ts.net
+	handle @canonical {
+		reverse_proxy calorietracker:3000
+	}
+	handle {
+		redir {{ tailscale_url }}{uri} permanent
+	}
+}

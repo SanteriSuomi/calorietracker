@@ -285,6 +285,9 @@
 				bind:value={aiEndpointUrl}
 				placeholder={m.settings_endpoint_placeholder()}
 			/>
+			{#if data.aiDefaultEndpoint}
+				<span class="text-xs text-muted-foreground">Using default endpoint</span>
+			{/if}
 			{#if errors.aiEndpointUrl}
 				<span class="text-xs text-destructive">{errors.aiEndpointUrl}</span>
 			{/if}
@@ -306,6 +309,9 @@
 				bind:value={aiModel}
 				placeholder={m.settings_model_placeholder()}
 			/>
+			{#if data.aiDefaultModel}
+				<span class="text-xs text-muted-foreground">Using default model</span>
+			{/if}
 		</div>
 		<div class="flex items-center gap-2">
 			<Button variant="outline" size="sm" onclick={handleTestAi} disabled={testingAi}>

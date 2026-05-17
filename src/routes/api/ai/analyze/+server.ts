@@ -3,11 +3,14 @@ import { json } from '@sveltejs/kit';
 import { generateText } from 'ai';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { env } from '$env/dynamic/private';
 import { extractJsonFromResponse } from '$lib/server/ai-helpers';
 import { db } from '$lib/server/db';
 import { userSettings } from '$lib/server/db/schema';
 import { AI_FORMAT_SUFFIX, DEFAULT_AI_SYSTEM_PROMPT } from '$lib/server/db/shared/constants';
 import { addLogContext } from '$lib/server/logger';
+import { aiCallCounter } from '$lib/server/metrics';
+import { getRateLimiter } from '$lib/server/rate-limiter';
 import type { RequestHandler } from './$types';
 
 const SYSTEM_PROMPT_VISION =
@@ -49,6 +52,13 @@ async function readFileAsBase64(file: File): Promise<{ base64: string; mediaType
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const user = locals.user;
 	if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
+
+	const rateLimiter = getRateLimiter();
+	const clientIp = request.headers.get('CF-Connecting-IP') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+	const rateResult = await rateLimiter.check(clientIp);
+	if (!rateResult.allowed) {
+		return json({ error: 'Rate limit exceeded' }, { status: 429 });
+	}
 
 	const contentType = request.headers.get('content-type') ?? '';
 	let description: string | undefined;
@@ -95,18 +105,22 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		.where(eq(userSettings.userId, user.id))
 		.limit(1);
 
-	const settings = settingsResult[0];
-	if (!settings?.aiEndpointUrl || !settings?.aiApiKey || !settings?.aiModel) {
+	const row = settingsResult[0];
+	const endpointUrl = row?.aiEndpointUrl || env.AI_DEFAULT_ENDPOINT || null;
+	const apiKey = row?.aiApiKey || env.AI_DEFAULT_API_KEY || null;
+	const model = row?.aiModel || env.AI_DEFAULT_MODEL || null;
+
+	if (!endpointUrl || !apiKey || !model) {
 		return json({ error: 'AI not configured. Go to Settings to configure.' }, { status: 400 });
 	}
 
 	const aiSource = imageFile ? (description ? 'ai_text_vision' : 'ai_vision') : 'ai_text';
-	const systemPrompt = (settings.aiSystemPrompt || DEFAULT_AI_SYSTEM_PROMPT) + AI_FORMAT_SUFFIX;
+	const systemPrompt = (row?.aiSystemPrompt || DEFAULT_AI_SYSTEM_PROMPT) + AI_FORMAT_SUFFIX;
 
 	try {
 		const provider = createOpenAI({
-			baseURL: settings.aiEndpointUrl,
-			apiKey: settings.aiApiKey
+			baseURL: endpointUrl,
+			apiKey
 		});
 
 		let aiCallParams: Parameters<typeof generateText>[0];
@@ -122,13 +136,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			contentParts.push({ type: 'file', mediaType, data: base64 });
 
 			aiCallParams = {
-				model: provider.chat(settings.aiModel),
+				model: provider.chat(model),
 				system: SYSTEM_PROMPT_VISION,
 				messages: [{ role: 'user', content: contentParts }]
 			};
 		} else {
 			aiCallParams = {
-				model: provider.chat(settings.aiModel),
+				model: provider.chat(model),
 				system: systemPrompt,
 				prompt: description!
 			};
@@ -139,15 +153,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const raw = extractJsonFromResponse(text);
 		const output = nutritionSchema.parse(raw);
 
-		addLogContext(locals, { aiSource, aiModel: settings.aiModel });
+		addLogContext(locals, { aiSource, aiModel: model });
+		aiCallCounter.inc({ source: aiSource, model, status: 'success' });
 
 		return json(output);
 	} catch (error) {
 		addLogContext(locals, {
 			aiSource,
-			aiModel: settings.aiModel,
+			aiModel: model,
 			error: error instanceof Error ? error.message : 'unknown'
 		});
+		aiCallCounter.inc({ source: aiSource, model, status: 'error' });
 
 		if (imageFile && isVisionError(error)) {
 			return json(

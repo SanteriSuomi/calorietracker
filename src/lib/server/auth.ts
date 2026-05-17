@@ -3,7 +3,10 @@ import { betterAuth } from 'better-auth/minimal';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
 import { env } from '$env/dynamic/private';
-import { databaseProvider, db } from '$lib/server/db';
+import { db } from '$lib/server/db';
+import { user } from '$lib/server/db/schema';
+import { databaseProvider } from '$lib/server/db';
+import { eq } from 'drizzle-orm';
 import { sendEmail } from '$lib/server/email';
 
 export const auth = betterAuth({
@@ -38,3 +41,25 @@ export const auth = betterAuth({
 	},
 	plugins: [sveltekitCookies(getRequestEvent)]
 });
+
+const DEFAULT_USER_EMAIL = 'default@local';
+const DEFAULT_USER_ID = 'default-user-local';
+
+export async function ensureDefaultUser() {
+	const existing = await db.select().from(user).where(eq(user.id, DEFAULT_USER_ID)).limit(1);
+	if (existing.length > 0) return existing[0];
+
+	const now = new Date();
+	await db.insert(user).values({
+		id: DEFAULT_USER_ID,
+		name: 'Default User',
+		email: DEFAULT_USER_EMAIL,
+		emailVerified: true,
+		image: null,
+		createdAt: now,
+		updatedAt: now
+	});
+
+	const created = await db.select().from(user).where(eq(user.id, DEFAULT_USER_ID)).limit(1);
+	return created[0];
+}

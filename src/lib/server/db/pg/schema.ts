@@ -179,3 +179,9 @@ export const userSettingsRelations = relations(userSettings, ({ one }) => ({
 		references: [user.id]
 	})
 }));
+
+export const rateLimits = pgTable('rate_limits', {
+	ip: text('ip').notNull(),
+	windowStart: timestamp('window_start', { withTimezone: true, mode: 'date' }).notNull(),
+	count: integer('count').notNull().default(1)
+});

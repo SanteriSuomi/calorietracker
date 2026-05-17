@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm';
+import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { meal, userSettings } from '$lib/server/db/schema';
 import {
@@ -58,6 +59,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	]);
 
 	const settingsRow = settingsResult[0];
+	const hasUserAi = !!(settingsRow?.aiEndpointUrl && settingsRow?.aiApiKey && settingsRow?.aiModel);
+	const hasDefaultAi = !!(env.AI_DEFAULT_ENDPOINT && env.AI_DEFAULT_API_KEY && env.AI_DEFAULT_MODEL);
 
 	return {
 		meals: mealsResult as Meal[],
@@ -66,6 +69,6 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		dailyProteinGoal: settingsRow?.dailyProteinGoal ?? DEFAULT_PROTEIN_GOAL,
 		dailyCarbsGoal: settingsRow?.dailyCarbsGoal ?? DEFAULT_CARBS_GOAL,
 		dailyFatGoal: settingsRow?.dailyFatGoal ?? DEFAULT_FAT_GOAL,
-		aiConfigured: !!(settingsRow?.aiEndpointUrl && settingsRow?.aiApiKey && settingsRow?.aiModel)
+		aiConfigured: hasUserAi || hasDefaultAi
 	};
 };

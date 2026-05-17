@@ -3,10 +3,12 @@ import { json } from '@sveltejs/kit';
 import { generateText } from 'ai';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { env } from '$env/dynamic/private';
 import { extractJsonFromResponse } from '$lib/server/ai-helpers';
 import { db } from '$lib/server/db';
 import { userSettings } from '$lib/server/db/schema';
 import { addLogContext } from '$lib/server/logger';
+import { aiCallCounter } from '$lib/server/metrics';
 import type { RequestHandler } from './$types';
 
 const SYSTEM_PROMPT =
@@ -107,21 +109,25 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		.where(eq(userSettings.userId, user.id))
 		.limit(1);
 
-	const settings = settingsResult[0];
-	if (!settings?.aiEndpointUrl || !settings?.aiApiKey || !settings?.aiModel) {
+	const row = settingsResult[0];
+	const endpointUrl = row?.aiEndpointUrl || env.AI_DEFAULT_ENDPOINT || null;
+	const apiKey = row?.aiApiKey || env.AI_DEFAULT_API_KEY || null;
+	const model = row?.aiModel || env.AI_DEFAULT_MODEL || null;
+
+	if (!endpointUrl || !apiKey || !model) {
 		return json({ error: 'AI not configured. Go to Settings to configure.' }, { status: 400 });
 	}
 
 	try {
 		const provider = createOpenAI({
-			baseURL: settings.aiEndpointUrl,
-			apiKey: settings.aiApiKey
+			baseURL: endpointUrl,
+			apiKey
 		});
 
 		const userMessage = `Age: ${parsed.age}, Weight: ${parsed.weight}kg, Height: ${parsed.height}cm, Activity: ${parsed.activityLevel}, Goal: ${parsed.goal}`;
 
 		const { text } = await generateText({
-			model: provider.chat(settings.aiModel),
+			model: provider.chat(model),
 			system: SYSTEM_PROMPT,
 			prompt: userMessage
 		});
@@ -129,15 +135,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const raw = extractJsonFromResponse(text);
 		const output = goalEstimateSchema.parse(raw);
 
-		addLogContext(locals, { aiSource: 'goal_estimate', aiModel: settings.aiModel });
+		addLogContext(locals, { aiSource: 'goal_estimate', aiModel: model });
+		aiCallCounter.inc({ source: 'goal_estimate', model, status: 'success' });
 
 		return json(output);
 	} catch (error) {
 		addLogContext(locals, {
 			aiSource: 'goal_estimate',
-			aiModel: settings.aiModel,
+			aiModel: model,
 			error: error instanceof Error ? error.message : 'unknown'
 		});
+		aiCallCounter.inc({ source: 'goal_estimate', model, status: 'error' });
 		return json({ error: 'AI service error' }, { status: 502 });
 	}
 };

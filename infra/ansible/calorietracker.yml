@@ -1,0 +1,6 @@
+---
+- name: Deploy CalorieTracker to MiniPC
+  hosts: minipc
+  become: true
+  roles:
+    - calorietracker

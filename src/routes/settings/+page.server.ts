@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { userSettings } from '$lib/server/db/schema';
 import {
@@ -26,7 +27,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 			height: '',
 			activityLevel: '',
 			goal: '',
-			email: ''
+			email: '',
+			aiDefaultEndpoint: false,
+			aiDefaultModel: false
 		};
 
 	const result = await db
@@ -50,6 +53,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		height: row?.height?.toString() ?? '',
 		activityLevel: row?.activityLevel ?? '',
 		goal: row?.goal ?? '',
-		email: user.email
+		email: user.email,
+		aiDefaultEndpoint: !row?.aiEndpointUrl && !!env.AI_DEFAULT_ENDPOINT,
+		aiDefaultModel: !row?.aiModel && !!env.AI_DEFAULT_MODEL
 	};
 };

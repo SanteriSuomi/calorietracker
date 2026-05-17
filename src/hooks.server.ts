@@ -2,11 +2,13 @@ import type { Handle, RequestEvent } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { building } from '$app/environment';
+import { env } from '$env/dynamic/private';
 import { deLocalizeUrl, getLocale, getTextDirection } from '$lib/paraglide/runtime';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 import { auth } from '$lib/server/auth';
 import { API_BASE, AUTH_API_ROUTE, AUTH_PAGE_ROUTE } from '$lib/server/constants';
 import { logger } from '$lib/server/logger';
+import { requestCounter } from '$lib/server/metrics';
 import type { WideEvent } from '$lib/server/types/logging';
 import { toLogError } from '$lib/server/types/logging';
 
@@ -59,9 +61,19 @@ const handleLogging: Handle = async ({ event, resolve }) => {
 	try {
 		const response = await resolve(event);
 		emitWideEvent(event, response.status, startTime);
+		requestCounter.inc({
+			method: event.request.method,
+			path: event.url.pathname,
+			status: response.status
+		});
 		return response;
 	} catch (error) {
 		emitWideEvent(event, 500, startTime, error);
+		requestCounter.inc({
+			method: event.request.method,
+			path: event.url.pathname,
+			status: 500
+		});
 		throw error;
 	}
 };
@@ -103,8 +115,47 @@ const handleAuthGuard: Handle = async ({ event, resolve }) => {
 	const isAuthPage =
 		canonicalPath === AUTH_PAGE_ROUTE || canonicalPath.startsWith(`${AUTH_PAGE_ROUTE}/`);
 	const isApiRoute = pathname.startsWith(API_BASE);
+	const isPublicEndpoint =
+		pathname === '/api/health' || pathname === '/api/metrics';
 
 	if (pathname.startsWith(AUTH_API_ROUTE)) {
+		return resolve(event);
+	}
+
+	if (isPublicEndpoint) {
+		return resolve(event);
+	}
+
+	if (env.AZURE_DEPLOYMENT === 'true' && !isPublicEndpoint) {
+		const cfIp = event.request.headers.get('CF-Connecting-IP');
+		if (!cfIp) {
+			logger.warn({
+				method: event.request.method,
+				path: pathname,
+				detail: 'Request bypassed Cloudflare — missing CF-Connecting-IP header'
+			});
+			return new Response('Forbidden', { status: 403 });
+		}
+	}
+
+	const disableAuth = env.DISABLE_AUTH === 'true';
+	if (disableAuth && env.AZURE_DEPLOYMENT === 'true') {
+		logger.fatal('DISABLE_AUTH=true with AZURE_DEPLOYMENT=true is not allowed');
+		process.exit(1);
+	}
+
+	if (disableAuth) {
+		const { ensureDefaultUser } = await import('$lib/server/auth');
+		const defaultUser = await ensureDefaultUser();
+		event.locals.user = {
+			id: defaultUser.id,
+			name: defaultUser.name,
+			email: defaultUser.email,
+			emailVerified: true,
+			image: null,
+			createdAt: defaultUser.createdAt,
+			updatedAt: defaultUser.updatedAt
+		};
 		return resolve(event);
 	}
 

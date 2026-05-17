@@ -1,0 +1,95 @@
+---
+- name: Check prerequisites
+  block:
+    - name: Check Docker is installed
+      ansible.builtin.command: docker --version
+      changed_when: false
+
+    - name: Check Tailscale is authenticated
+      ansible.builtin.command: tailscale status --json
+      changed_when: false
+
+- name: Create directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  loop:
+    - /opt/dockerdata/calorietracker
+    - /opt/dockerdata/calorietracker/backups
+    - /opt/dockerdata/caddy
+    - /opt/dockerdata/grafana-alloy
+    - "~/calorietracker"
+
+- name: Generate secrets if not provided
+  block:
+    - name: Generate better_auth_secret
+      ansible.builtin.shell: openssl rand -hex 32
+      register: generated_auth_secret
+      changed_when: false
+      when: better_auth_secret == ""
+
+    - name: Set better_auth_secret
+      ansible.builtin.set_fact:
+        better_auth_secret: "{{ generated_auth_secret.stdout }}"
+      when: better_auth_secret == ""
+
+    - name: Generate encryption_secret
+      ansible.builtin.shell: openssl rand -hex 32
+      register: generated_encryption_secret
+      changed_when: false
+      when: encryption_secret == ""
+
+    - name: Set encryption_secret
+      ansible.builtin.set_fact:
+        encryption_secret: "{{ generated_encryption_secret.stdout }}"
+      when: encryption_secret == ""
+
+- name: Deploy Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: /opt/dockerdata/caddy/Caddyfile
+    mode: "0644"
+  notify: Restart caddy
+
+- name: Deploy Grafana Alloy config
+  ansible.builtin.template:
+    src: config.alloy.j2
+    dest: /opt/dockerdata/grafana-alloy/config.alloy
+    mode: "0644"
+  notify: Restart grafana-alloy
+
+- name: Login to GHCR
+  community.docker.docker_login:
+    registry_url: ghcr.io
+    username: "{{ ghcr_user }}"
+    password: "{{ ghcr_pat }}"
+  when: ghcr_pat != ""
+
+- name: Deploy compose.yml
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "~/calorietracker/compose.yml"
+    mode: "0644"
+
+- name: Run docker compose
+  community.docker.docker_compose_v2:
+    project_src: "~/calorietracker"
+    state: present
+    pull: always
+
+- name: Configure Tailscale Serve
+  ansible.builtin.shell:
+    cmd: tailscale serve --bg 8529
+    creates: /var/run/ts-serve-configured
+  become: false
+
+- name: Create SQLite backup cron
+  ansible.builtin.cron:
+    name: sqlite-backup
+    hour: "3"
+    minute: "0"
+    job: "cp /opt/dockerdata/calorietracker/local.db /opt/dockerdata/calorietracker/backups/local-$(date +\\%Y\\%m\\%d).db 2>/dev/null || true"
+    user: "{{ ansible_user }}"

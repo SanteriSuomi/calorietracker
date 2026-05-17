@@ -18,6 +18,15 @@ Thumbs.db
 !.env.example
 !.env.test
 
+# Terraform
+infra/terraform/terraform.tfvars
+infra/terraform/.terraform/
+*.tfplan
+
+# SOPS plaintext secrets
+infra/secrets/terraform_providers.env
+infra/secrets/dev.env
+
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

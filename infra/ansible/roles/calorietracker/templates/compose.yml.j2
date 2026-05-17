@@ -1,0 +1,50 @@
+services:
+  caddy:
+    image: caddy:2
+    container_name: caddy-ct
+    ports:
+      - "8529:8529"
+    volumes:
+      - /opt/dockerdata/caddy/Caddyfile:/etc/caddy/Caddyfile
+    restart: unless-stopped
+
+  calorietracker:
+    image: ghcr.io/santerisuomi/calorietracker:latest
+    container_name: calorietracker
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Helsinki
+      - DISABLE_AUTH=true
+      - DATABASE_URL=file:data/local.db
+      - DATABASE_PROVIDER=libsql
+      - STORAGE_PROVIDER=local
+      - ORIGIN={{ tailscale_url }}
+      - BETTER_AUTH_SECRET={{ better_auth_secret }}
+      - ENCRYPTION_SECRET={{ encryption_secret }}
+      - AI_DEFAULT_ENDPOINT={{ ai_default_endpoint }}
+      - AI_DEFAULT_API_KEY={{ ai_default_api_key }}
+      - AI_DEFAULT_MODEL={{ ai_default_model }}
+    volumes:
+      - /opt/dockerdata/calorietracker:/app/data
+    expose:
+      - "3000"
+    restart: unless-stopped
+
+  grafana-alloy:
+    image: grafana/alloy:latest
+    container_name: grafana-alloy
+    volumes:
+      - /opt/dockerdata/grafana-alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - HOSTNAME=minipc
+      - GRAFANA_CLOUD_PROM_ENDPOINT={{ grafana_cloud_prom_endpoint }}
+      - GRAFANA_CLOUD_PROM_USER={{ grafana_cloud_prom_user }}
+      - GRAFANA_CLOUD_PROM_PASSWORD={{ grafana_cloud_prom_password }}
+      - GRAFANA_CLOUD_LOKI_ENDPOINT={{ grafana_cloud_loki_endpoint }}
+      - GRAFANA_CLOUD_LOKI_USER={{ grafana_cloud_loki_user }}
+      - GRAFANA_CLOUD_LOKI_PASSWORD={{ grafana_cloud_loki_password }}
+    restart: unless-stopped

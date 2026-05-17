@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
+import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { userSettings } from '$lib/server/db/schema';
 import { DEFAULT_CALORIE_GOAL } from '$lib/server/db/shared/constants';
@@ -50,7 +51,9 @@ export const GET: RequestHandler = async ({ locals }) => {
 			weight: null,
 			height: null,
 			activityLevel: null,
-			goal: null
+			goal: null,
+			aiDefaultEndpoint: !!env.AI_DEFAULT_ENDPOINT,
+			aiDefaultModel: !!env.AI_DEFAULT_MODEL
 		});
 	}
 
@@ -69,7 +72,9 @@ export const GET: RequestHandler = async ({ locals }) => {
 		weight: row.weight,
 		height: row.height,
 		activityLevel: row.activityLevel,
-		goal: row.goal
+		goal: row.goal,
+		aiDefaultEndpoint: !row.aiEndpointUrl && !!env.AI_DEFAULT_ENDPOINT,
+		aiDefaultModel: !row.aiModel && !!env.AI_DEFAULT_MODEL
 	});
 };
 
@@ -346,6 +351,8 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
 		weight: weight ?? null,
 		height: height ?? null,
 		activityLevel,
-		goal: profileGoal
+		goal: profileGoal,
+		aiDefaultEndpoint: !endpointUrl && !!env.AI_DEFAULT_ENDPOINT,
+		aiDefaultModel: !model && !!env.AI_DEFAULT_MODEL
 	});
 };

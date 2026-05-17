@@ -1,0 +1,16 @@
+tailscale_hostname: fedora
+tailscale_tailnet: taila9242b
+tailscale_url: "https://{{ tailscale_hostname }}.{{ tailscale_tailnet }}.ts.net"
+ghcr_user: SanteriSuomi
+ghcr_pat: ""
+better_auth_secret: ""
+encryption_secret: ""
+grafana_cloud_prom_endpoint: ""
+grafana_cloud_prom_user: ""
+grafana_cloud_prom_password: ""
+grafana_cloud_loki_endpoint: ""
+grafana_cloud_loki_user: ""
+grafana_cloud_loki_password: ""
+ai_default_endpoint: "http://host.docker.internal:8525/v1"
+ai_default_api_key: "sk-dummy"
+ai_default_model: "Qwen3.6-35B-A3B-Q8_0.gguf"

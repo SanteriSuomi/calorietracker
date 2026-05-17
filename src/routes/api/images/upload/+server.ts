@@ -4,7 +4,7 @@ import { storage } from '$lib/server/storage';
 import type { RequestHandler } from './$types';
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-const MAX_SIZE = 5 * 1024 * 1024;
+const MAX_SIZE = 10 * 1024 * 1024;
 const EXT_MAP: Record<string, string> = {
 	'image/jpeg': 'jpeg',
 	'image/png': 'png',
@@ -28,7 +28,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	if (imageField.size > MAX_SIZE) {
-		return json({ error: 'File too large (max 5MB)' }, { status: 400 });
+		return json({ error: 'File too large (max 10MB)' }, { status: 413 });
 	}
 
 	if (!ALLOWED_TYPES.has(imageField.type)) {

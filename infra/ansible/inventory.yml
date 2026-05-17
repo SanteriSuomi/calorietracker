@@ -1,0 +1,6 @@
+all:
+  hosts:
+    minipc:
+      ansible_host: 100.65.89.53
+      ansible_user: sants
+      ansible_python_interpreter: /usr/bin/python3

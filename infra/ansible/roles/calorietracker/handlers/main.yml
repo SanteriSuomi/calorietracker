@@ -1,0 +1,16 @@
+---
+- name: Restart caddy
+  community.docker.docker_compose_v2:
+    project_src: "~/calorietracker"
+    state: present
+    services:
+      - caddy
+  listen: Restart caddy
+
+- name: Restart grafana-alloy
+  community.docker.docker_compose_v2:
+    project_src: "~/calorietracker"
+    state: present
+    services:
+      - grafana-alloy
+  listen: Restart grafana-alloy
