@@ -60,6 +60,14 @@ pnpm seed:dev           # Create test user (libsql only)
 - `.env` is gitignored and NOT copied to worktrees — copy manually + `drizzle-kit push`
 - Agent may run outside the worktree directory — show full file paths when in worktrees or similar
 
+## Infrastructure (IaC)
+
+- Two Terraform states: `infra/terraform/` (main) and `infra/terraform/grafana-stack/`
+- Deploy script: `bash infra/terraform/scripts/deploy.sh` — applies main state, generates tfvars, applies grafana-stack
+- Env setup: `source infra/terraform/scripts/terraform_env.sh` — decrypts SOPS-encrypted provider creds
+- Validate before committing: `terraform -chdir=infra/terraform validate && terraform -chdir=infra/terraform/grafana-stack validate`
+- SOPS-encrypted secrets in `infra/secrets/` (`.env.encrypted` files, decrypted at deploy time)
+
 ## Living Docs
 
 - `docs/PLAN.md` — update when steps complete

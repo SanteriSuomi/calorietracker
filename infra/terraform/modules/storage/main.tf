@@ -15,17 +15,23 @@ resource "azurerm_storage_account" "this" {
   account_replication_type = "LRS"
   min_tls_version          = "TLS1_2"
   tags                     = var.tags
+
+  blob_properties {
+    delete_retention_policy {
+      days = 30
+    }
+  }
 }
 
 resource "azurerm_storage_container" "prod" {
   name                  = "calorietracker-images"
-  storage_account_name  = azurerm_storage_account.this.name
+  storage_account_id    = azurerm_storage_account.this.id
   container_access_type = "private"
 }
 
 resource "azurerm_storage_container" "staging" {
   name                  = "calorietracker-staging-images"
-  storage_account_name  = azurerm_storage_account.this.name
+  storage_account_id    = azurerm_storage_account.this.id
   container_access_type = "private"
 }
 

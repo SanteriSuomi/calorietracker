@@ -2,6 +2,10 @@ variable "resource_group_name" {
   type = string
 }
 
+variable "location" {
+  type = string
+}
+
 variable "environment_name" {
   type = string
 
@@ -20,10 +24,6 @@ variable "container_app_env_default_domain" {
 }
 
 variable "ghcr_image" {
-  type = string
-}
-
-variable "key_vault_id" {
   type = string
 }
 

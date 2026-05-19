@@ -1,53 +1,62 @@
+resource "azurerm_user_assigned_identity" "this" {
+  name                = var.environment_name == "prod" ? "uid-calorietracker" : "uid-calorietracker-staging"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  tags                = var.tags
+}
+
 resource "azurerm_container_app" "this" {
   name                         = var.environment_name == "prod" ? "calorietracker" : "calorietracker-staging"
   resource_group_name          = var.resource_group_name
   container_app_environment_id = var.container_app_env_id
   revision_mode                = "Single"
+  workload_profile_name        = "Consumption"
   tags                         = var.tags
 
   identity {
-    type = "SystemAssigned"
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.this.id]
   }
 
   secret {
     name                = "database-url"
-    identity            = azurerm_container_app.this.identity[0].principal_id
+    identity            = azurerm_user_assigned_identity.this.id
     key_vault_secret_id = "https://${var.key_vault_name}.vault.azure.net/secrets/${var.database_url_secret}"
   }
 
   secret {
     name                = "better-auth-secret"
-    identity            = azurerm_container_app.this.identity[0].principal_id
+    identity            = azurerm_user_assigned_identity.this.id
     key_vault_secret_id = "https://${var.key_vault_name}.vault.azure.net/secrets/${var.auth_secret}"
   }
 
   secret {
     name                = "encryption-secret"
-    identity            = azurerm_container_app.this.identity[0].principal_id
+    identity            = azurerm_user_assigned_identity.this.id
     key_vault_secret_id = "https://${var.key_vault_name}.vault.azure.net/secrets/${var.encryption_secret}"
   }
 
   secret {
     name                = "azure-blob-connection-string"
-    identity            = azurerm_container_app.this.identity[0].principal_id
+    identity            = azurerm_user_assigned_identity.this.id
     key_vault_secret_id = "https://${var.key_vault_name}.vault.azure.net/secrets/${var.blob_connection_secret}"
   }
 
   secret {
     name                = "grafana-prom-endpoint"
-    identity            = azurerm_container_app.this.identity[0].principal_id
+    identity            = azurerm_user_assigned_identity.this.id
     key_vault_secret_id = "https://${var.key_vault_name}.vault.azure.net/secrets/${var.grafana_prom_endpoint_secret}"
   }
 
   secret {
     name                = "grafana-prom-user"
-    identity            = azurerm_container_app.this.identity[0].principal_id
+    identity            = azurerm_user_assigned_identity.this.id
     key_vault_secret_id = "https://${var.key_vault_name}.vault.azure.net/secrets/${var.grafana_prom_user_secret}"
   }
 
   secret {
     name                = "grafana-prom-password"
-    identity            = azurerm_container_app.this.identity[0].principal_id
+    identity            = azurerm_user_assigned_identity.this.id
     key_vault_secret_id = "https://${var.key_vault_name}.vault.azure.net/secrets/${var.grafana_prom_password_secret}"
   }
 
@@ -70,7 +79,7 @@ resource "azurerm_container_app" "this" {
       name   = "calorietracker"
       image  = var.ghcr_image
       cpu    = 0.5
-      memory = "1.0Gi"
+      memory = "1Gi"
 
       env {
         name  = "AZURE_DEPLOYMENT"
@@ -89,7 +98,7 @@ resource "azurerm_container_app" "this" {
 
       env {
         name  = "ORIGIN"
-        value = "https://${azurerm_container_app.this.name}.${var.container_app_env_default_domain}"
+        value = "https://${var.environment_name == "prod" ? "calorietracker" : "calorietracker-staging"}.${var.container_app_env_default_domain}"
       }
 
       env {
@@ -115,7 +124,7 @@ resource "azurerm_container_app" "this" {
       readiness_probe {
         path                    = "/api/health"
         port                    = 3000
-        transport               = "http"
+        transport               = "HTTP"
         interval_seconds        = 10
         timeout                 = 5
         failure_count_threshold = 3
@@ -124,7 +133,7 @@ resource "azurerm_container_app" "this" {
       liveness_probe {
         path                    = "/api/health"
         port                    = 3000
-        transport               = "http"
+        transport               = "HTTP"
         interval_seconds        = 30
         timeout                 = 10
         failure_count_threshold = 3
@@ -133,7 +142,7 @@ resource "azurerm_container_app" "this" {
 
     container {
       name   = "grafana-alloy"
-      image  = "grafana/alloy:latest"
+      image  = "grafana/alloy:v1.16.1"
       cpu    = 0.25
       memory = "0.5Gi"
 

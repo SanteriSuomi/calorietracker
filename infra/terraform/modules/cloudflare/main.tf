@@ -26,7 +26,7 @@ resource "cloudflare_ruleset" "rate_limit_api" {
       expression = "(http.request.uri.path contains \"/api/\")"
       action     = "block"
       ratelimit = {
-        characteristics     = ["ip.src"]
+        characteristics     = ["ip.src", "cf.colo.id"]
         period              = 10
         requests_per_period = 100
         mitigation_timeout  = 10

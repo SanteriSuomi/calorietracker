@@ -4,10 +4,5 @@ variable "stack_name" {
 
 variable "region_slug" {
   type    = string
-  default = "prod_us_east_0"
-}
-
-variable "tags" {
-  type    = map(string)
-  default = {}
+  default = "prod-eu-north-0"
 }

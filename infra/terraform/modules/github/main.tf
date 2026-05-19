@@ -7,8 +7,18 @@ terraform {
   }
 }
 
+data "github_repository" "this" {
+  full_name = var.repository
+}
+
+resource "github_branch" "develop" {
+  repository    = split("/", var.repository)[1]
+  branch        = "develop"
+  source_branch = "main"
+}
+
 resource "github_branch_protection" "develop" {
-  repository_id = var.repository
+  repository_id = data.github_repository.this.node_id
   pattern       = "develop"
   enforce_admins = false
 
@@ -21,10 +31,12 @@ resource "github_branch_protection" "develop" {
     dismiss_stale_reviews      = true
     required_approving_review_count = 0
   }
+
+  depends_on = [github_branch.develop]
 }
 
 resource "github_branch_protection" "main" {
-  repository_id = var.repository
+  repository_id = data.github_repository.this.node_id
   pattern       = "main"
   enforce_admins = true
 

@@ -1,5 +1,9 @@
 provider "azurerm" {
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
 }
 
 provider "cloudflare" {}
@@ -8,15 +12,43 @@ provider "github" {
   owner = split("/", var.github_repo)[0]
 }
 
-provider "grafana" {}
+provider "grafana" {
+  alias = "cloud"
+}
 
 data "azurerm_client_config" "current" {}
+
+resource "random_password" "auth_secret" {
+  length  = 32
+  special = true
+}
+
+resource "random_password" "staging_auth_secret" {
+  length  = 32
+  special = true
+}
+
+resource "random_password" "encryption_secret" {
+  length  = 32
+  special = true
+}
+
+resource "random_password" "staging_encryption_secret" {
+  length  = 32
+  special = true
+}
+
+resource "azurerm_resource_group" "rg" {
+  name     = var.azure_resource_group_name
+  location = var.azure_location
+  tags     = var.tags
+}
 
 module "network" {
   source = "./modules/network"
 
-  resource_group_name        = var.azure_resource_group_name
-  location                   = var.azure_location
+  resource_group_name        = azurerm_resource_group.rg.name
+  location                   = azurerm_resource_group.rg.location
   vnet_address_space         = var.azure_vnet_address_space
   container_apps_subnet_cidr = var.azure_container_apps_subnet_cidr
   postgres_subnet_cidr       = var.azure_postgres_subnet_cidr
@@ -26,27 +58,26 @@ module "network" {
 module "log_analytics" {
   source = "./modules/log-analytics"
 
-  resource_group_name = var.azure_resource_group_name
-  location            = var.azure_location
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
   tags                = var.tags
 }
 
 module "container_app_env" {
   source = "./modules/container-app-env"
 
-  resource_group_name         = var.azure_resource_group_name
-  location                    = var.azure_location
-  subnet_id                   = module.network.container_apps_subnet_id
-  log_analytics_workspace_id  = module.log_analytics.workspace_id
-  log_analytics_workspace_key = module.log_analytics.primary_shared_key
-  tags                        = var.tags
+  resource_group_name        = azurerm_resource_group.rg.name
+  location                   = azurerm_resource_group.rg.location
+  subnet_id                  = module.network.container_apps_subnet_id
+  log_analytics_workspace_id = module.log_analytics.workspace_id
+  tags                       = var.tags
 }
 
 module "postgres" {
   source = "./modules/postgres"
 
-  resource_group_name    = var.azure_resource_group_name
-  location               = var.azure_location
+  resource_group_name    = azurerm_resource_group.rg.name
+  location               = azurerm_resource_group.rg.location
   subnet_id              = module.network.postgres_subnet_id
   private_dns_zone_id    = module.network.private_dns_zone_id
   administrator_login    = var.db_admin_username
@@ -62,8 +93,8 @@ module "postgres" {
 module "storage" {
   source = "./modules/storage"
 
-  resource_group_name = var.azure_resource_group_name
-  location            = var.azure_location
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
   subnet_id           = module.network.container_apps_subnet_id
   tags                = var.tags
 }
@@ -71,8 +102,8 @@ module "storage" {
 module "keyvault" {
   source = "./modules/keyvault"
 
-  resource_group_name = var.azure_resource_group_name
-  location            = var.azure_location
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
   tenant_id           = data.azurerm_client_config.current.tenant_id
   tags                = var.tags
 }
@@ -80,27 +111,30 @@ module "keyvault" {
 module "grafana_cloud" {
   source = "./modules/grafana-cloud"
 
+  providers = {
+    grafana.cloud = grafana.cloud
+  }
+
   stack_name  = var.grafana_cloud_stack_name
   region_slug = var.grafana_cloud_region_slug
-  tags        = var.tags
 }
 
-resource "azurerm_key_vault_secret" "grafana_prom_endpoint" {
-  name         = "grafana-cloud-prom-endpoint"
-  value        = module.grafana_cloud.prom_remote_write_endpoint
-  key_vault_id = module.keyvault.key_vault_id
-}
+module "kv_secrets" {
+  source = "./modules/keyvault-secrets"
 
-resource "azurerm_key_vault_secret" "grafana_prom_user" {
-  name         = "grafana-cloud-prom-user"
-  value        = "${module.grafana_cloud.prom_user_id}"
-  key_vault_id = module.keyvault.key_vault_id
-}
-
-resource "azurerm_key_vault_secret" "grafana_prom_password" {
-  name         = "grafana-cloud-prom-password"
-  value        = module.grafana_cloud.prom_password
-  key_vault_id = module.keyvault.key_vault_id
+  key_vault_id        = module.keyvault.key_vault_id
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  deployer_object_id  = data.azurerm_client_config.current.object_id
+  prod_database_url   = module.postgres.prod_connection_string
+  staging_database_url = module.postgres.staging_connection_string
+  auth_secret         = random_password.auth_secret.result
+  staging_auth_secret = random_password.staging_auth_secret.result
+  encryption_secret   = random_password.encryption_secret.result
+  staging_encryption_secret = random_password.staging_encryption_secret.result
+  blob_connection_string = module.storage.primary_connection_string
+  grafana_prom_endpoint   = module.grafana_cloud.prom_remote_write_endpoint
+  grafana_prom_user_id    = module.grafana_cloud.prom_user_id
+  grafana_prom_password   = module.grafana_cloud.prom_password
 }
 
 resource "azurerm_key_vault_access_policy" "prod" {
@@ -109,6 +143,8 @@ resource "azurerm_key_vault_access_policy" "prod" {
   object_id    = module.container_app_prod.identity_principal_id
 
   secret_permissions = ["Get", "List"]
+
+  depends_on = [module.kv_secrets]
 }
 
 resource "azurerm_key_vault_access_policy" "staging" {
@@ -117,17 +153,19 @@ resource "azurerm_key_vault_access_policy" "staging" {
   object_id    = module.container_app_staging.identity_principal_id
 
   secret_permissions = ["Get", "List"]
+
+  depends_on = [module.kv_secrets]
 }
 
 module "container_app_prod" {
   source = "./modules/container-app"
 
   environment_name                 = "prod"
-  resource_group_name              = var.azure_resource_group_name
+  resource_group_name              = azurerm_resource_group.rg.name
+  location                         = azurerm_resource_group.rg.location
   container_app_env_id             = module.container_app_env.environment_id
   container_app_env_default_domain = module.container_app_env.default_domain
   ghcr_image                       = var.ghcr_image
-  key_vault_id                     = module.keyvault.key_vault_id
   key_vault_name                   = module.keyvault.key_vault_name
   database_url_secret              = "database-url"
   auth_secret                      = "better-auth-secret"
@@ -138,18 +176,20 @@ module "container_app_prod" {
   grafana_prom_password_secret     = "grafana-cloud-prom-password"
   tags                             = var.tags
 
-  depends_on = [module.keyvault, azurerm_key_vault_secret.grafana_prom_endpoint]
+  depends_on = [
+    module.kv_secrets,
+  ]
 }
 
 module "container_app_staging" {
   source = "./modules/container-app"
 
   environment_name                 = "staging"
-  resource_group_name              = var.azure_resource_group_name
+  resource_group_name              = azurerm_resource_group.rg.name
+  location                         = azurerm_resource_group.rg.location
   container_app_env_id             = module.container_app_env.environment_id
   container_app_env_default_domain = module.container_app_env.default_domain
   ghcr_image                       = var.ghcr_image
-  key_vault_id                     = module.keyvault.key_vault_id
   key_vault_name                   = module.keyvault.key_vault_name
   database_url_secret              = "staging-database-url"
   auth_secret                      = "staging-better-auth-secret"
@@ -160,26 +200,15 @@ module "container_app_staging" {
   grafana_prom_password_secret     = "grafana-cloud-prom-password"
   tags                             = var.tags
 
-  depends_on = [module.keyvault, azurerm_key_vault_secret.grafana_prom_endpoint]
-}
-
-module "migration_job" {
-  source = "./modules/migration-job"
-
-  resource_group_name  = var.azure_resource_group_name
-  location             = var.azure_location
-  container_app_env_id = module.container_app_env.environment_id
-  ghcr_image           = var.ghcr_image
-  database_url_secret  = "database-url"
-  key_vault_id         = module.keyvault.key_vault_id
-  tags                 = var.tags
+  depends_on = [
+    module.kv_secrets,
+  ]
 }
 
 module "cloudflare" {
   source = "./modules/cloudflare"
 
   zone_id            = var.cloudflare_zone_id
-  domain             = var.cloudflare_domain
   container_app_fqdn = module.container_app_prod.app_fqdn
 }
 

@@ -19,13 +19,13 @@ Thumbs.db
 !.env.test
 
 # Terraform
-infra/terraform/terraform.tfvars
 infra/terraform/.terraform/
+infra/terraform/grafana-stack/.terraform/
+infra/terraform/grafana-stack/terraform.tfvars
 *.tfplan
 
 # SOPS plaintext secrets
-infra/secrets/terraform_providers.env
-infra/secrets/dev.env
+infra/secrets/terraform_secrets.env
 
 # Vite
 vite.config.js.timestamp-*

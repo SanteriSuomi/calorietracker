@@ -12,7 +12,6 @@ resource "azurerm_virtual_network" "this" {
   location            = var.location
   resource_group_name = var.resource_group_name
   address_space       = [var.vnet_address_space]
-  dns_servers         = ["calorietracker-vnet"]
   tags                = var.tags
 }
 

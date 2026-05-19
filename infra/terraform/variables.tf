@@ -24,26 +24,23 @@ variable "azure_postgres_subnet_cidr" {
 }
 
 variable "cloudflare_zone_id" {
-  type = string
+  type    = string
+  default = "3c801a39648d146b6af1c7fcb0e478a3"
 }
 
 variable "cloudflare_domain" {
-  type = string
+  type    = string
+  default = "calorietracker.dev"
 }
 
 variable "ghcr_image" {
   type    = string
-  default = "ghcr.io/santerisuomi/calorietracker:placeholder"
-}
-
-variable "ghcr_username" {
-  type    = string
-  default = "SanteriSuomi"
+  default = "nginx:alpine"
 }
 
 variable "postgres_sku" {
   type    = string
-  default = "B1ms"
+  default = "B_Standard_B1ms"
 }
 
 variable "postgres_storage_mb" {
@@ -76,11 +73,6 @@ variable "prod_db_name" {
   default = "calorietracker"
 }
 
-variable "keyvault_sku" {
-  type    = string
-  default = "standard"
-}
-
 variable "github_repo" {
   type    = string
   default = "SanteriSuomi/calorietracker"
@@ -93,16 +85,7 @@ variable "grafana_cloud_stack_name" {
 
 variable "grafana_cloud_region_slug" {
   type    = string
-  default = "prod_us_east_0"
-}
-
-variable "budget_amount" {
-  type    = number
-  default = 25
-}
-
-variable "budget_notification_emails" {
-  type = list(string)
+  default = "prod-eu-north-0"
 }
 
 variable "tags" {

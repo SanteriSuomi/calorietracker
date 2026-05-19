@@ -14,5 +14,12 @@ resource "azurerm_container_app_environment" "this" {
   infrastructure_subnet_id   = var.subnet_id
   log_analytics_workspace_id = var.log_analytics_workspace_id
 
+  workload_profile {
+    name                  = "Consumption"
+    maximum_count         = 0
+    minimum_count         = 0
+    workload_profile_type = "Consumption"
+  }
+
   tags = var.tags
 }

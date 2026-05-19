@@ -23,7 +23,7 @@ Mobile-first calorie and macro tracker with AI-powered food logging via text des
 | Encryption | libsql `encryptionKey` (DB) + AES-256-GCM per-user (images, self-hosted)            |
 | CI/CD      | GitHub Actions                                                                      |
 | Deploy     | Azure Container Apps (consumption) + self-hosted server (parallel stages)           |
-| IaC        | Bicep (idempotent, Azure-native)                                                    |
+| IaC        | Terraform (3 states: main, kv-secrets, grafana-stack)                              |
 
 ---
 
@@ -225,7 +225,7 @@ Job 1: Build & Test
   → Push to GitHub Container Registry (GHCR)
 
 Job 2: Deploy Azure (on main, after build)
-  → az deployment group create -f infra/main.bicep (idempotent)
+  → Run DB migrations (same image, overridden command)
   → az containerapp update --image <new-tag>
 
 Job 3: Deploy MiniPC (on main, after build, parallel to Job 2)
@@ -235,14 +235,33 @@ Job 3: Deploy MiniPC (on main, after build, parallel to Job 2)
 
 ## Infrastructure
 
-### Azure Resources (infra/main.bicep)
+### Terraform States
 
-- Container Apps Environment
-- Container App (ACR image, minReplicas: 0)
-- Azure Container Registry
-- PostgreSQL Flexible Server + Database
-- Blob Storage Account
-- Key Vault (secrets)
+Two separate states:
+
+- **main** (`infra/terraform/`) — Azure infra + KV secrets (keyvault-secrets module) + Grafana Cloud stack/SA + Cloudflare + GitHub
+- **grafana-stack** (`infra/terraform/grafana-stack/`) — Grafana datasources + folder
+
+Deploy script: `bash infra/terraform/scripts/deploy.sh` — applies main state, then grafana-stack state.
+
+### Azure Resources
+
+- Resource Group
+- VNet + subnets (container apps, postgres) + private DNS zone
+- Container Apps Environment (Consumption)
+- Container Apps (prod + staging) — currently `nginx:alpine` placeholder, CI pushes real image
+- PostgreSQL Flexible Server (private endpoint, Burstable B1ms) + prod/staging databases
+- Blob Storage Account + containers (prod/staging images)
+- Key Vault + 11 secrets (DB URLs, auth/encryption secrets, blob connection, Grafana creds)
+- User-assigned managed identities for container apps (Key Vault access)
+- Log Analytics workspace
+
+### External Services
+
+- **Cloudflare** — CNAME (proxied) pointing to prod container app FQDN, API rate limit rule
+- **GitHub** — `develop` branch, branch protection on `main` and `develop`
+- **Grafana Cloud** — stack (`calorietracker`, EU Sweden), Admin SA + token, Prometheus + Loki datasources, CalorieTracker folder
+- Container apps run Grafana Alloy sidecar for metrics collection
 
 ### MiniPC (192.168.1.233)
 
@@ -284,12 +303,12 @@ GOOGLE_CLIENT_SECRET=        # Optional
 - [x] 8. Image handling — Upload, encrypt/decrypt (dual storage), serve with auth check
 - [x] 9. Calendar view — Month grid + list tabs, navigate to day
 - [x] 10. Docker + local dev — Dockerfile, docker-compose
-- [ ] 11. IaC — Bicep templates for Azure resources *(superseded by step 18)*
-- [ ] 12. CI/CD — Azure DevOps pipeline *(superseded by step 19)*
+- [x] 11. IaC — Bicep templates for Azure resources *(superseded by step 18)*
+- [x] 12. CI/CD — Azure DevOps pipeline *(superseded by step 19)*
 - [x] 13. Internationalization — i18n setup (paraglide), locale detection, extract all hardcoded strings to translation files, language switcher in Settings, English + Finnish
 - [x] 14. Polish — Loading states, error handling, PWA manifest. Bugfixes: title link to home, brand name not translated ("CalorieTracker"), settings page scrollbar, image+text AI input
 - [x] 15. Password Recovery — Forgot password flow: email with reset link, reset password page. Requires email provider (Resend/SendGrid/SMTP). BetterAuth built-in email verification + password reset plugins
 - [x] 16. Settings & Calendar Improvements — Expose macro goals (protein/carbs/fat) in Settings UI. Configurable AI system prompt with assertive default + enforced format suffix. Reorder Settings: AI Config → Goals → Language → Account. Calendar List: extended range (90 days), scroll container, calories per day row, date search/filter
 - [x] 17. AI Goal Estimation & Account Management — User profile inputs (age, weight, height, activity level, goal). POST /api/ai/estimate-goals → AI returns kcal + macro targets. "Estimate with AI" button pre-fills Goals section. Delete account + all user data (meals, settings, images, auth). Confirmation dialog, cascade cleanup, sign out + redirect
-- [ ] 18. Infrastructure Setup — Azure: Bicep templates (Container Apps, ACR, PostgreSQL, Blob Storage, Key Vault). MiniPC: Docker Compose, self-hosted GitHub Actions runner, Tailscale networking, reverse proxy + HTTPS, .env template
-- [ ] 19. CI/CD — GitHub Actions: build + lint + typecheck + test, Docker image → GHCR, deploy Azure (Bicep + container app update), deploy MiniPC (self-hosted runner pulls image + docker compose up -d)
+- [x] 18. Infrastructure Setup — Terraform (2 states: main, grafana-stack). Azure: Container Apps (prod+staging), PostgreSQL Flexible Server, Blob Storage, Key Vault + secrets (keyvault-secrets module), VNet, Log Analytics. Cloudflare: DNS + rate limiting. GitHub: branch protection. Grafana Cloud: stack, datasources, folder. Code changes: DISABLE_AUTH, AI_DEFAULT_*, /api/health, /metrics, CF-IP middleware, Dockerfile, .env.example, rate limiting, image upload size limit (10MB)
+- [ ] 19. CI/CD — GitHub Actions: build + lint + typecheck + test, Docker image → GHCR, DB migration job, deploy Azure (container app update), deploy MiniPC (self-hosted runner pulls image + docker compose up -d)

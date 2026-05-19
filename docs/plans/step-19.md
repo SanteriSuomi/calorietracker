@@ -304,6 +304,25 @@ Add cleanup to prevent unbounded image storage. Two categories need cleanup:
 | # | File | Change |
 |---|------|--------|
 | 6 | `vite.config.ts` | Add coverage thresholds |
+| 7 | `infra/terraform/modules/container-app/main.tf` | Add Loki env vars to Alloy sidecar, mount `config.alloy` |
+| 8 | `infra/terraform/modules/container-app/variables.tf` | Add Loki secret name inputs |
+| 9 | `infra/terraform/kv-secrets/main.tf` | Add 3 Loki KV secrets (endpoint, user, password) |
+| 10 | `infra/terraform/kv-secrets/variables.tf` | Add Loki secret value inputs |
+| 11 | `infra/terraform/main.tf` | Pass Loki secret names to container-app module |
+| 12 | `infra/terraform/outputs.tf` | Add Loki outputs for deploy.sh |
+| 13 | `infra/terraform/scripts/deploy.sh` | Pass Loki values to kv-secrets tfvars |
+
+### Grafana Alloy Log Collection
+
+Alloy sidecar currently only pushes metrics to Prometheus. Add Loki log collection:
+
+1. **`infra/terraform/config/config.alloy`** — Alloy config file:
+   - `discovery.docker` to discover the app container in the same pod
+   - `loki.process` to tail app container stdout, parse Pino JSON, extract fields as labels
+   - `loki.write` to push to Grafana Cloud Loki (using Loki env vars)
+2. **Loki secrets in Key Vault** — `grafana-cloud-loki-endpoint`, `grafana-cloud-loki-user`, `grafana-cloud-loki-password` (same SA token as Prometheus, different user ID)
+3. **Container app module** — mount `config.alloy` as a volume, add 3 Loki env vars to the Alloy sidecar
+4. **Grafana dashboard** — create a log dashboard in the `CalorieTracker` folder (via grafana-stack state)
 
 ---
 
@@ -330,6 +349,7 @@ Add cleanup to prevent unbounded image storage. Two categories need cleanup:
 | **Phase 2: Coverage config** | Add Vitest coverage thresholds to vite.config.ts |
 | **Phase 3: GitHub setup** | Configure secrets, push protection, Qodo (manual). Branch protection via step 18 Terraform |
 | **Phase 4: Test** | Push to develop, verify staging deploy. Push to main, verify prod + MiniPC deploy |
+| **Phase 5: Log collection** | Add Loki secrets to KV, create `config.alloy`, update container-app module to mount config + add Loki env vars, apply Terraform, add Grafana log dashboard |
 
 ---
 

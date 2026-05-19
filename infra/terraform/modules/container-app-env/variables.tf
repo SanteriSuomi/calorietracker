@@ -14,11 +14,6 @@ variable "log_analytics_workspace_id" {
   type = string
 }
 
-variable "log_analytics_workspace_key" {
-  type      = string
-  sensitive = true
-}
-
 variable "tags" {
   type    = map(string)
   default = {}

@@ -23,5 +23,35 @@ output "storage_account_name" {
 }
 
 output "grafana_cloud_url" {
-  value = "https://${var.grafana_cloud_stack_name}.grafana.net"
+  value = module.grafana_cloud.stack_url
+}
+
+output "grafana_service_account_id" {
+  value = module.grafana_cloud.service_account_id
+}
+
+output "grafana_prom_remote_endpoint" {
+  value = module.grafana_cloud.prom_remote_write_endpoint
+}
+
+output "grafana_prom_user_id" {
+  value = module.grafana_cloud.prom_user_id
+}
+
+output "grafana_prom_password" {
+  value     = module.grafana_cloud.prom_password
+  sensitive = true
+}
+
+output "grafana_service_account_token" {
+  value     = module.grafana_cloud.prom_password
+  sensitive = true
+}
+
+output "grafana_loki_url" {
+  value = module.grafana_cloud.loki_url
+}
+
+output "grafana_loki_user_id" {
+  value = module.grafana_cloud.loki_user_id
 }

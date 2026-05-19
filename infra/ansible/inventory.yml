@@ -3,4 +3,5 @@ all:
     minipc:
       ansible_host: 100.65.89.53
       ansible_user: sants
+      ansible_ssh_common_args: "-o ProxyCommand=none"
       ansible_python_interpreter: /usr/bin/python3

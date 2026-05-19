@@ -7,5 +7,5 @@ output "app_fqdn" {
 }
 
 output "identity_principal_id" {
-  value = azurerm_container_app.this.identity[0].principal_id
+  value = azurerm_user_assigned_identity.this.principal_id
 }
