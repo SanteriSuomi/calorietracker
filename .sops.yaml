@@ -6,11 +6,11 @@ creation_rules:
     key_groups:
       - age:
           - *admin
-  - path_regex: ^infra[/\\]terraform[/\\]grafana-stack[/\\]terraform\.tfvars$
+  - path_regex: ^infra[/\\]terraform[/\\]grafana-stack[/\\]terraform\.tfvars(\.encrypted)?$
     key_groups:
       - age:
           - *admin
-  - path_regex: ^infra[/\\]ansible[/\\]group_vars[/\\].*\.yml$
+  - path_regex: ^infra[/\\]ansible[/\\]group_vars[/\\].*\.yml(\.encrypted)?$
     key_groups:
       - age:
           - *admin

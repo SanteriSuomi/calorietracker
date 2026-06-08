@@ -55,3 +55,13 @@ output "grafana_loki_url" {
 output "grafana_loki_user_id" {
   value = module.grafana_cloud.loki_user_id
 }
+
+output "better_auth_secret" {
+  value     = random_password.auth_secret.result
+  sensitive = true
+}
+
+output "encryption_secret" {
+  value     = random_password.encryption_secret.result
+  sensitive = true
+}

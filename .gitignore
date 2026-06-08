@@ -22,10 +22,13 @@ Thumbs.db
 infra/terraform/.terraform/
 infra/terraform/grafana-stack/.terraform/
 infra/terraform/grafana-stack/terraform.tfvars
+!infra/terraform/grafana-stack/terraform.tfvars.encrypted
 *.tfplan
 
 # SOPS plaintext secrets
 infra/secrets/terraform_secrets.env
+infra/secrets/ansible_secrets.env
+infra/ansible/group_vars/minipc.yml
 
 # Vite
 vite.config.js.timestamp-*

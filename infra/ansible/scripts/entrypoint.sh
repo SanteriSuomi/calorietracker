@@ -7,10 +7,15 @@ if [ -z "${TS_AUTHKEY:-}" ]; then
   exit 1
 fi
 
+if [ ! -c /dev/net/tun ]; then
+  mkdir -p /dev/net
+  mknod /dev/net/tun c 10 200 2>/dev/null || true
+fi
+
 tailscaled --state=/tmp/tailscaled.state --socket=/tmp/tailscaled.sock &
 sleep 2
 
-tailscale up --authkey="${TS_AUTHKEY}" --ephemeral --accept-routes
+tailscale up --authkey="${TS_AUTHKEY}" --accept-routes
 
 echo ""
 echo "Tailscale connected. Ready."

@@ -13,9 +13,18 @@ echo ""
 echo "=== Generating grafana-stack terraform.tfvars ==="
 terraform -chdir="$TF_MAIN" output -json | bash "$SCRIPT_DIR/generate-grafana-tfvars.sh"
 
+echo ""
+echo "=== Generating Ansible minipc vars ==="
+terraform -chdir="$TF_MAIN" output -json | bash "$SCRIPT_DIR/../../ansible/scripts/generate-minipc-vars.sh"
+
 echo "=== Applying grafana-stack Terraform state ==="
-terraform -chdir="$SCRIPT_DIR/../grafana-stack" init
-terraform -chdir="$SCRIPT_DIR/../grafana-stack" apply -auto-approve
+TF_GRAFANA="$SCRIPT_DIR/../grafana-stack"
+if [ -f "$TF_GRAFANA/terraform.tfvars.encrypted" ]; then
+  sops -d --input-type binary --output-type binary "$TF_GRAFANA/terraform.tfvars.encrypted" > "$TF_GRAFANA/terraform.tfvars"
+fi
+terraform -chdir="$TF_GRAFANA" init
+terraform -chdir="$TF_GRAFANA" apply -auto-approve
+rm -f "$TF_GRAFANA/terraform.tfvars"
 
 echo ""
 echo "=== Done ==="

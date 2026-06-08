@@ -18,7 +18,10 @@ prom_password=$(echo "$OUTPUTS" | jq -r '.grafana_prom_password.value')
 loki_url=$(echo "$OUTPUTS" | jq -r '.grafana_loki_url.value')
 loki_user_id=$(echo "$OUTPUTS" | jq -r '.grafana_loki_user_id.value')
 
-cat > "$TF_GRAFANA/terraform.tfvars" <<EOF
+PLAINTEXT="$TF_GRAFANA/terraform.tfvars"
+ENCRYPTED="$TF_GRAFANA/terraform.tfvars.encrypted"
+
+cat > "$PLAINTEXT" <<EOF
 grafana_stack_url             = "${grafana_stack_url}"
 grafana_service_account_token = "${grafana_service_account_token}"
 prom_remote_endpoint          = "${prom_remote_endpoint}"
@@ -28,4 +31,8 @@ loki_url                      = "${loki_url}"
 loki_user_id                  = "${loki_user_id}"
 EOF
 
-echo "Generated $TF_GRAFANA/terraform.tfvars"
+echo "Generated $PLAINTEXT"
+
+sops -e --input-type binary --output-type binary "$PLAINTEXT" > "$ENCRYPTED"
+rm "$PLAINTEXT"
+echo "Encrypted $ENCRYPTED (plaintext removed)"
